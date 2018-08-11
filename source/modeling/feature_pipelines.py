@@ -265,7 +265,7 @@ def build_feature_pipelines_and_unions():
     toxicity_chars_feats = toxicity_chars_feats_pipeline()
     feats = FeatureUnion([
         ('text', text),
-        #('length_feats', length_feats),
+        ('length_feats', length_feats),
         ('argumentation_feats', argumentation_feats),
         ('COMMENTIQ_feats', COMMENTIQ_feats),
         ('named_entity_feats', named_entity_feats),

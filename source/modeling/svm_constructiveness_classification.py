@@ -11,6 +11,10 @@ from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.externals import joblib
+from sklearn.feature_selection import SelectFromModel
+from sklearn.feature_selection import RFE
+from sklearn.feature_selection import RFECV
+from sklearn.model_selection import StratifiedKFold
 
 from sklearn import metrics
 import numpy as np
@@ -28,7 +32,7 @@ class ConstructivenessClassifier():
     '''
 
     '''
-    def __init__(self, train_features_csv, test_features_csv, features,
+    def __init__(self, df_train, features = None, df_test = None,
                  comments_col = 'pp_comment_text',
                  target_col = 'constructive'):
         '''
@@ -40,8 +44,11 @@ class ConstructivenessClassifier():
         :param classifier: (str) The name of the sklearn classifier
         '''
 
-        self.df_train = pd.read_csv(train_features_csv, header=0)
-        self.df_test = pd.read_csv(test_features_csv, header=0)
+        #self.df_train = pd.read_csv(train_features_csv, header=0)
+        #self.df_test = pd.read_csv(test_features_csv, header=0)
+
+        self.df_train = df_train
+        self.df_test = df_test
 
         self.comments_col = comments_col
 
@@ -55,8 +62,8 @@ class ConstructivenessClassifier():
         self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(
             self.X1, self.y1, test_size=0.2, random_state=0)
 
-        self.X_test = self.df_test[self.df_test.columns.drop(target_col)]
-        self.y_test = self.df_test[target_col]
+        #self.X_test = self.df_test[self.df_test.columns.drop(target_col)]
+        #self.y_test = self.df_test[target_col]
         # Best parameters found
         # {'C': 1000, 'gamma': 0.001, 'kernel': 'rbf'}
         self.tuned_parameters = [#{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
@@ -120,6 +127,10 @@ class ConstructivenessClassifier():
         feats = build_feature_pipelines_and_unions()
         pipeline = Pipeline([
             ('features',feats),
+            #('feature_selection', SelectFromModel(SVC(kernel = 'linear'))),
+            #('feature_selection', RFE(estimator=SVC(kernel='linear'), n_features_to_select=1, step=1)),
+            #('feature_selection', RFECV(estimator=SVC(kernel='linear'), step=1, cv=StratifiedKFold(2),
+            #  scoring='accuracy')),
             #('classifier', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=42)),
             ('classifier', classifier),
         ])
@@ -179,56 +190,5 @@ class ConstructivenessClassifier():
         plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60, ha='right')
         plt.show()
 
-def get_arguments():
-    parser = argparse.ArgumentParser(description='Classify constructive comments')
-    parser.add_argument('--train_dataset_path', '-tr', type=str, dest='train_dataset_path', action='store',
-                        #default= '/Users/vkolhatk/Data/Constructiveness/data/train/features.csv',
-                        #default='/home/vkolhatk/data/Constructiveness/data/train/features.csv',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/train/gnm_features.csv',
-                        help="the input dir containing data")
 
-    parser.add_argument('--model_path', '-m', type=str, dest='model_file_path', action='store',
-                        default= '/Users/vkolhatk/Data/Constructiveness/intermediate_output/models/svm_model.pkl',
-                        #default='/home/vkolhatk/data/Constructiveness/data/train/features.csv',
-                        help="the path of the file to save the model")
-
-    parser.add_argument('--test_dataset_path', '-te', type=str, dest='test_dataset_path', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/test/features.csv',
-                        #default='/home/vkolhatk/data/Constructiveness/data/test/features.csv',
-                        help="The test dataset path for constructive and non-constructive comments")
-
-    parser.add_argument('--features', '-f', type=list, dest='features', action='store',
-                        default=(['Has_conjunction_or_connectives',
-                                  'Has_stance_adverbials',
-                                  'Has_reasoning_verbs', 'Has_modals'
-                                  'Has_shell_nouns',
-                                  'Len',
-                                  'Average_word_length',
-                                  'Redability',
-                                  'PersonalEXP',
-                                  'Named_entity_count',
-                                  'nSents',
-                                  'Avg_words_per_sent']),
-
-                        help="The features to use for classification")
-
-    args = parser.parse_args()
-    return args
-
-if __name__ == "__main__":
-    args = get_arguments()
-    print(args)
-
-    # Training data with features csv
-    #svm_classifier = ConstructivenessClassifier(args.train_dataset_path, args.test_dataset_path, args.features)
-    svm_classifier = ConstructivenessClassifier('../../results/output.csv', args.test_dataset_path, args.features)
-    svm_classifier.run_nfold_cross_validation(n=5)
-    #svm_classifier.grid_search()
-    #svm_classifier.train_classifier(args.model_file_path)
-    #svm_classifier.test_classifier()
-    #svm_classifier.run_svm_cross_validation()
-    #svm_classifier.run_svm_with_csv_features()
-    #Results with word count features
-    #print('Results with word features:')
-    #svm_classifier.run_svm_with_word_count_features()
 
