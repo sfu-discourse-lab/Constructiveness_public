@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 __author__      = "Varada Kolhatkar"
 import pandas as pd
-from timeit import default_timer as timer
+import numpy as np
 from normalize_comments import *
 COMMENT_WORDS_THRESHOLD = 4
 CONSTRUCTIVENESS_SCORE_THRESHOLD = 0.6
@@ -101,9 +101,9 @@ class ConstructivenessDataCollector:
                            cols_dict['comment_word_count']:'comment_word_count',
                            cols_dict['constructive']: 'constructive'}, inplace = True)
         df['source'] = source
-        df['constructive_characteristics'] = 'NA'
-        df['non_constructive_characteristics'] = 'NA'
-        df['toxicity_characteristics'] = 'NA'
+        df['constructive_characteristics'] = np.NaN
+        df['non_constructive_characteristics'] = np.NaN
+        df['toxicity_characteristics'] = np.NaN
         # Select comments selected by NYT moderators as NYT pick and where the length
         # of the comment is  > COMMENT_WORDS_THRESHOLD
         positive_df = df[
@@ -135,9 +135,9 @@ class ConstructivenessDataCollector:
         df.rename(columns={cols_dict['comment_text']: 'comment_text'}, inplace=True)
         df['comment_word_count'] = df['comment_text'].apply(lambda x: len(x.split()))
         df['source'] = source
-        df['constructive_characteristics'] = 'NA'
-        df['non_constructive_characteristics'] = 'NA'
-        df['toxicity_characteristics'] = 'NA'
+        df['constructive_characteristics'] = np.NaN
+        df['non_constructive_characteristics'] = np.NaN
+        df['toxicity_characteristics'] = np.NaN
 
         df_subset = df[(df['comment_word_count'] > COMMENT_WORDS_THRESHOLD) & (
             df[cols_dict['constructive']].str.startswith('Not'))]
