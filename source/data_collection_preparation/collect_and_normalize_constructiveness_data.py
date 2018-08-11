@@ -1,4 +1,4 @@
-import argparse
+import argparse, sys
 from constructiveness_data_collector import *
 
 
@@ -29,8 +29,13 @@ def get_arguments():
                         default='/Users/vkolhatk/Data/SOCC/annotated/constructiveness/SFU_constructiveness_toxicity_corpus.csv',
                         help="SOCC constructiveness and toxicity annotations CSV")
 
+    parser.add_argument('--SOCC_large_annotated_data_path', '-SOCC_large', type=str, dest='SOCC_large_annotated_csv', action='store',
+                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/constructiveness_and_toxicity_annotations_batches_1_to_12.csv',
+                        help="SOCC large-scale annotated data file path csv")
+
     parser.add_argument('--train_csv', '-tr', type=str, dest='train_csv', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/train/NYT_picks_constructive_YNACC_non_constructive.csv',
+                        #default='/Users/vkolhatk/Data/Constructiveness/data/train/NYT_picks_constructive_YNACC_non_constructive.csv',
+                        default='/Users/vkolhatk/Data/Constructiveness/data/train/SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
                         help="The training data output CSV containing instances for constructive and non-constructive comments.")
 
     parser.add_argument('--test_csv', '-te', type=str, dest='test_csv', action='store',
@@ -45,11 +50,14 @@ if __name__ == "__main__":
     args = get_arguments()
     cdc = ConstructivenessDataCollector()
 
+    cdc.collect_training_data_from_CSV(args.SOCC_large_annotated_csv, source = 'SOCC')
     # Collect training data
     positive_examples_csvs = [[args.nyt_picks_csv, 1.0], [args.commentIQ_nyt_picks_csv, 1.0]]
     negative_examples_csvs = [[args.ync_expert_path, 1.0], [args.ync_mturk_path, 0.43] ]
-    cdc.collect_train_data(positive_examples_csvs, negative_examples_csvs, args.train_csv)
+    cdc.collect_train_data(positive_examples_csvs, negative_examples_csvs)
+
+    cdc.write_csv(args.train_csv)
 
     # Collect test data
-    test_csvs = [[args.SOCC_annotated_csv,1.0]]
-    cdc.collect_test_data(test_csvs, args.test_csv)
+    #test_csvs = [[args.SOCC_annotated_csv,1.0]]
+    #cdc.collect_test_data(test_csvs, args.test_csv)

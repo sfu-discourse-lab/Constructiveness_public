@@ -4,6 +4,7 @@ import pandas as pd
 from timeit import default_timer as timer
 from normalize_comments import *
 COMMENT_WORDS_THRESHOLD = 4
+CONSTRUCTIVENESS_SCORE_THRESHOLD = 0.6
 
 class ConstructivenessDataCollector:
     '''
@@ -15,7 +16,7 @@ class ConstructivenessDataCollector:
         '''
         '''
         # initialize a dataframe for the training data
-        self.training_df = pd.DataFrame(columns=['comment_text', 'constructive'])
+        self.training_df = pd.DataFrame(columns=['comment_text', 'constructive', 'source'])
         self.test_df = pd.DataFrame(columns=['comment_counter', 'comment_text', 'constructive'])
         self.training_df_normalized = None
         self.test_df_normalized = None
@@ -51,7 +52,36 @@ class ConstructivenessDataCollector:
         else:
             self.test_df_normalized = df_processed
 
-    def collect_positive_examples(self, positive_examples_csv, frac = 1.0,
+    def collect_training_data_from_CSV(self, data_csv, frac = 1.0, source = 'SOCC',
+                                       cols_dict={'constructive': 'constructive',
+                                                  'comment_text': 'comment_text',
+                                                  'comment_word_count': 'commentWordCount'}):
+        '''
+        :param data_csv:
+        :param frac:
+        :param cols_dict:
+        :return:
+        '''
+        df = pd.read_csv(data_csv, skipinitialspace=True)
+        df = df.sample(frac = frac)
+        if not cols_dict['comment_word_count'] in df:
+            df[cols_dict['comment_word_count']] = df[cols_dict['comment_text']].apply(lambda x: len(x.split()))
+
+        df.rename(columns={cols_dict['comment_text']: 'comment_text',
+                           cols_dict['comment_word_count']:'comment_word_count',
+                           cols_dict['constructive']: 'constructive'}, inplace = True)
+        df['source'] = source
+        # Select comments selected by NYT moderators as NYT pick and where the length
+        # of the comment is  > COMMENT_WORDS_THRESHOLD
+        df['constructive'] = df['constructive'].apply(lambda x: 1 if x > CONSTRUCTIVENESS_SCORE_THRESHOLD else 0)
+        self.training_df = pd.concat([self.training_df, df[['comment_text', 'constructive', 'source',
+                                                            'constructive_characteristics',
+                                                            'non_constructive_characteristics',
+                                                            'toxicity_characteristics']]])
+        self.normalize_comment_text(mode='train')
+        #self.write_csv(output_csv)
+
+    def collect_positive_examples(self, positive_examples_csv, frac = 1.0, source = 'NYTPicks',
                                   cols_dict = {'constructive':'editorsSelection',
                                                'comment_text':'commentBody',
                                                'comment_word_count': 'commentWordCount'}):
@@ -70,15 +100,23 @@ class ConstructivenessDataCollector:
         df.rename(columns={cols_dict['comment_text']: 'comment_text',
                            cols_dict['comment_word_count']:'comment_word_count',
                            cols_dict['constructive']: 'constructive'}, inplace = True)
-
+        df['source'] = source
+        df['constructive_characteristics'] = 'NA'
+        df['non_constructive_characteristics'] = 'NA'
+        df['toxicity_characteristics'] = 'NA'
         # Select comments selected by NYT moderators as NYT pick and where the length
         # of the comment is  > COMMENT_WORDS_THRESHOLD
         positive_df = df[
             (df['constructive'] == 1) & (df['comment_word_count'] > COMMENT_WORDS_THRESHOLD)]
-        self.training_df = pd.concat([self.training_df, positive_df[['comment_text', 'constructive']]])
+        self.training_df = pd.concat([self.training_df, positive_df[['comment_text', 'constructive', 'source',
+                                                                     'constructive_characteristics',
+                                                                     'non_constructive_characteristics',
+                                                                     'toxicity_characteristics'
+                                                                     ]]])
+        self.normalize_comment_text(mode='train')
         return positive_df
 
-    def collect_negative_examples(self, negative_examples_csv, frac = 1.0,
+    def collect_negative_examples(self, negative_examples_csv, frac = 1.0, source = 'YNACC',
                                   cols_dict = {'comment_text': 'text',
                                                'constructive': 'constructiveclass'}):
         '''
@@ -96,13 +134,21 @@ class ConstructivenessDataCollector:
         df = df.sample(frac = frac)
         df.rename(columns={cols_dict['comment_text']: 'comment_text'}, inplace=True)
         df['comment_word_count'] = df['comment_text'].apply(lambda x: len(x.split()))
+        df['source'] = source
+        df['constructive_characteristics'] = 'NA'
+        df['non_constructive_characteristics'] = 'NA'
+        df['toxicity_characteristics'] = 'NA'
 
         df_subset = df[(df['comment_word_count'] > COMMENT_WORDS_THRESHOLD) & (
             df[cols_dict['constructive']].str.startswith('Not'))]
         negative_df = df_subset.copy()
 
         negative_df['constructive'] = negative_df[cols_dict['constructive']].apply(lambda x: 0 if x.startswith('Not') else 1)
-        self.training_df = pd.concat([self.training_df, negative_df[['comment_text', 'constructive']]])
+        self.training_df = pd.concat([self.training_df, negative_df[['comment_text', 'constructive', 'source',
+                                                                     'constructive_characteristics',
+                                                                     'non_constructive_characteristics',
+                                                                     'toxicity_characteristics'
+                                                                     ]]])
         return negative_df
 
     def gather_test_data(self, test_data_file, frac = 1.0,
@@ -123,12 +169,10 @@ class ConstructivenessDataCollector:
 
     def collect_train_data(self,
             positive_examples_csvs,
-            negative_examples_csvs,
-            output_csv):
+            negative_examples_csvs):
         '''
         :param positive_examples_csvs:
         :param negative_examples_csvs:
-        :param output_csv:
         :return:
         '''
 
@@ -156,9 +200,6 @@ class ConstructivenessDataCollector:
         print('Total number of positive examples: ', positive_df.shape[0])
         print('Total number of negative examples: ', negative_df.shape[0])
 
-        # Write training data CSV
-        self.write_csv(output_csv)
-
     def collect_test_data(self, test_csvs, output_csv):
         '''
         :param test_csvs:
@@ -177,7 +218,11 @@ class ConstructivenessDataCollector:
                       cols=['comment_counter', 'comment_text', 'pp_comment_text', 'constructive'])
 
 
-    def write_csv(self, output_csv, mode ='train', cols = ['comment_text', 'pp_comment_text', 'constructive'], index = False):
+    def write_csv(self, output_csv, mode ='train', cols = ['comment_text', 'pp_comment_text',
+                                                           'constructive', 'source',
+                                                           'constructive_characteristics',
+                                                           'non_constructive_characteristics',
+                                                           'toxicity_characteristics'], index = False):
         '''
         :param output_csv:
         :param mode:
@@ -196,3 +241,5 @@ class ConstructivenessDataCollector:
             print('Test data written as a CSV: ', output_csv)
         else:
             print('Invalid mode!!')
+
+
