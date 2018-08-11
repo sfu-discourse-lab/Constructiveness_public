@@ -1,8 +1,9 @@
 __author__      = "Varada Kolhatkar"
 import argparse
-import sys
+import sys, re
 import numpy as np
 import pandas as pd
+import math
 sys.path.append('COMMENTIQ_code_subset/')
 import commentIQ_features
 from spacy_features import CommentLevelFeatures
@@ -26,10 +27,19 @@ class FeatureExtractor():
         self.shell_nouns = self.file2list(ROOT + 'resources/shell_nouns.txt')
         self.modals = self.file2list(ROOT + 'resources/modals.txt')
         self.data_csv = data_csv
+        #self.df = pd.read_csv(data_csv, skiprows = [num for num in range(2000,50000)])
         self.df = pd.read_csv(data_csv)
+        print(self.df.columns)
+        print(self.df.shape)
         self.comment_col = comment_column
         self.features_data = []
         self.cols = []
+
+    def get_features_df(self):
+        '''
+        :return:
+        '''
+        return self.df
 
     def file2list(self, file_name):
         '''
@@ -121,6 +131,25 @@ class FeatureExtractor():
             return 1
         return 0
 
+    def has_characteristic(self, crowd_annotated_chars, characteristic):
+        '''
+        :param column:
+        :param characteristic:
+        :return:
+        '''
+
+        try:
+            if type(crowd_annotated_chars) != str and math.isnan(crowd_annotated_chars):
+                return np.NaN
+        except:
+            print('crowd_annotated_chars: ', crowd_annotated_chars)
+            sys.exit(0)
+
+        crowd_chars = [re.sub(':\d+', '', crowd_char) for crowd_char in crowd_annotated_chars.split()]
+        if characteristic in crowd_chars:
+            return 1
+        return 0
+
     def get_comment_level_features(self, comment):
         '''
         :param comment: String. Comment to extract features.
@@ -139,7 +168,38 @@ class FeatureExtractor():
 
         return ner_count, nsentscount, anwords
 
-    def extract_features(self, output_csv):
+    def extract_crowd_annotated_features(self, char_cols = ['constructive_characteristics',
+                                                 'non_constructive_characteristics',
+                                                 'toxicity_characteristics'
+                                                 ]):
+        '''
+        :param output_csv:
+        :return:
+        '''
+        constructive_chars = ['specific_points', 'dialogue', 'evidence', 'personal_story', 'solution', 'no_con']
+        non_constructive_chars = ['no_respect', 'provocative', 'sarcastic', 'non_relevant', 'unsubstantial', 'no_non_con']
+        toxic_chars = ['personal_attack', 'teasing', 'abusive', 'embarrassment', 'inflammatory', 'no_toxic']
+
+        print(self.df.columns)
+        for char_col in char_cols:
+            if char_col.startswith('constructive'):
+                for char in constructive_chars:
+                    self.df[char] = self.df[char_col].apply(self.has_characteristic, args = (char,))
+            if char_col.startswith('non_constructive'):
+                for char in non_constructive_chars:
+                    self.df[char] = self.df[char_col].apply(self.has_characteristic, args = (char,))
+            if char_col.startswith('toxic'):
+                for char in toxic_chars:
+                    self.df[char] = self.df[char_col].apply(self.has_characteristic, args = (char,))
+        print(self.df.columns)
+
+        self.df['constructive'] = self.df['constructive'].apply(lambda x: 1 if x > 0.6 else 0)
+        #self.df.rename(columns={'comment_text':'pp_comment_text'}, inplace=True)
+        #self.df.to_csv(output_csv, columns = cols, index = False)
+        #print('Features CSV written: ', output_csv)
+
+
+    def extract_features(self):
         '''
         :param output_csv: String. The CSV path to write feature vectors
         :return: None
@@ -175,35 +235,57 @@ class FeatureExtractor():
         self.df['personal_exp_score'] = self.df[self.comment_col].apply(
             commentIQ_features.calcPersonalXPScores)
 
-        self.df['named_entity_count'], self.df['nSents'], self.df['Avg_words_per_sent'] = \
+        self.df['named_entity_count'], self.df['nSents'], self.df['avg_words_per_sent'] = \
             zip(*self.df[self.comment_col].apply(self.get_comment_level_features))
 
-        cols = (['pp_comment_text', 'constructive', 'has_conjunctions_and_connectives',
-                     'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
-                     'length', 'average_word_length', 'readability_score', 'personal_exp_score',
-                     'named_entity_count', 'nSents', 'Avg_words_per_sent'])
-
+    def write_features_csv(self, output_csv,
+                           cols = ['pp_comment_text', 'constructive', 'source',
+                                     'has_conjunctions_and_connectives',
+                                     'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
+                                     'length', 'average_word_length', 'readability_score', 'personal_exp_score',
+                                     'named_entity_count', 'nSents', 'avg_words_per_sent',
+                                       'specific_points', 'dialogue', 'no_con',
+                                       'evidence', 'personal_story', 'solution', 'no_respect', 'no_non_con',
+                                       'provocative', 'noncon_other', 'sarcastic', 'non_relevant',
+                                       'unsubstantial', 'personal_attack', 'teasing', 'no_toxic', 'abusive',
+                                       'toxic_other', 'embarrassment', 'inflammatory'
+                                   ]):
+        '''
+        :param cols:
+        :return:
+        '''
         self.df.to_csv(output_csv, columns = cols, index = False)
         print('Features CSV written: ', output_csv)
 
 def get_arguments():
     parser = argparse.ArgumentParser(description='SFU Sentiment Calculator')
+
+    parser.add_argument('--gnm_annotated_data_path', '-gnmanno', type=str, dest='gnm_annotated_data_path', action='store',
+                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/constructiveness_and_toxicity_annotations_batches_1_to_12.csv',
+                        help="The gnm annotated training data csv")
+
     parser.add_argument('--train_dataset_path', '-tr', type=str, dest='train_data_path', action='store',
-                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/NYT_picks_constructive_YNACC_non_constructive.csv',
+                        #default = '/Users/vkolhatk/Data/Constructiveness/data/train/NYT_picks_constructive_YNACC_non_constructive.csv',
+                        default='/Users/vkolhatk/Data/Constructiveness/data/train/SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
                         help="The training data csv")
+
+    parser.add_argument('--train_gnm_dataset_path', '-trgnm', type=str, dest='train_gnm_data_path', action='store',
+                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/constructiveness_crowdsource.csv',
+                        help="The Globe and Mail training data csv")
 
     parser.add_argument('--test_dataset_path', '-te', type=str, dest='test_data_path', action='store',
                         default='/Users/vkolhatk/Data/Constructiveness/data/test/SOCC_constructiveness.csv',
                         help="The test dataset path for constructive and non-constructive comments")
 
     parser.add_argument('--train_features_csv', '-trf', type=str, dest='train_features_csv', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/train/features.csv',
+                        default='/Users/vkolhatk/Data/Constructiveness/data/train/SOCC_nyt_ync_features.csv',
+                        #default='/Users/vkolhatk/Data/Constructiveness/data/train/gnm_nyt_ync_features.csv',
+                        #default='/Users/vkolhatk/Data/Constructiveness/data/train/gnm_crowd_annotated_features.csv',
                         help="The file containing comments and extracted features for training data")
 
     parser.add_argument('--test_features_csv', '-tef', type=str, dest='test_features_csv', action='store',
                         default='/Users/vkolhatk/Data/Constructiveness/data/test/features.csv',
                         help="The file containing comments and extracted features for test data")
-
 
     args = parser.parse_args()
     return args
@@ -212,11 +294,42 @@ if __name__ == "__main__":
     args = get_arguments()
     print(args)
 
-    #fe_train = FeatureExtractor(args.train_data_path)
-    #fe_train.extract_features(args.train_features_csv)
+    #fe_train = FeatureExtractor(args.train_gnm_data_path)
+    #fe_train.extract_features(args.train_gnm_features_csv)
+    #fe_train = FeatureExtractor(args.gnm_annotated_data_path)
+    #fe_train.extract_crowd_annotated_features()
+    #fe_train.extract_features()
 
-    fe_test = FeatureExtractor(args.test_data_path)
-    fe_test.extract_features(args.test_features_csv)
+    cols = ['pp_comment_text', 'constructive',
+            'specific_points', 'dialogue', 'no_con',
+            'evidence', 'personal_story', 'solution', 'no_respect', 'no_non_con',
+            'provocative', 'noncon_other', 'sarcastic', 'non_relevant',
+            'unsubstantial', 'personal_attack', 'teasing', 'no_toxic', 'abusive',
+            'toxic_other', 'embarrassment', 'inflammatory', 'has_conjunctions_and_connectives',
+             'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
+             'length', 'average_word_length', 'readability_score', 'personal_exp_score',
+             'named_entity_count', 'nSents', 'avg_words_per_sent']
+    #fe_train.write_features_csv(args.train_features_csv, cols)
+
+    fe_train = FeatureExtractor(args.train_data_path)
+    fe_train.extract_features()
+    fe_train.extract_crowd_annotated_features()
+    fe_train.write_features_csv(args.train_features_csv)
+    #nyt_ync_df = fe_train.get_features_df()
+    #print('columns: ', nyt_ync_df.columns)
+
+    #fe_gnm_train = FeatureExtractor(args.train_gnm_data_path)
+    #fe_gnm_train.extract_features()
+    #fe_gnm_train.extract_crowd_annotated_features()
+    #fe_gnm_train_df = fe_gnm_train.get_features_df()
+    #print('columns: ', fe_gnm_train_df.columns)
+
+    #df = pd.concat([nyt_ync_df,fe_gnm_train_df])
+    #df.to_csv(args.train_features_csv, index = False)
+    #fe_train.write_features_csv(args.train_features_csv)
+
+    #fe_test = FeatureExtractor(args.test_data_path)
+    #fe_test.extract_features(args.test_features_csv)
 
 
 
