@@ -2,7 +2,7 @@ class Config:
     PROJECT_NAME = 'Constructiveness'
     NYT_API_KEY = 'XXX'
     
-    HOME = '/home/vkolhatk/'
+    HOME = '/Users/vkolhatk/'
     PROJECT_HOME = HOME + 'dev/Constructiveness_public/'
     DATA_HOME = HOME + 'data/Constructiveness_public/'
     RESOURCES_HOME = PROJECT_HOME + 'resources/'
@@ -29,3 +29,9 @@ class Config:
     MODEL_PATH = DATA_HOME + 'models/'
     # Test data files
     TEST_PATH = DATA_HOME + 'test/'
+
+    # Web interface settings
+    PORT = 9999
+    HOST = 'localhost'
+    FEEDBACK_CSV_DIR = DATA_HOME + 'feedback/'
+    FEEDBACK_CSV_PATH = FEEDBACK_CSV_DIR + 'feedback.csv'
