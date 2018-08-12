@@ -4,15 +4,16 @@ import csv
 import json
 import sys
 sys.path.append('../../../source/modeling/')
+sys.path.append('../../../')
+from config import Config
+
 import svm_constructiveness_predictor
 from svm_constructiveness_predictor import ConstructivenessSVM
 import bilstm_constructiveness_predictor
 from bilstm_constructiveness_predictor import Constructiveness_biLSTM
-#ROOT = '/home/ling-discourse-lab/Varada/'
-ROOT = '/Users/vkolhatk/Data/Constructiveness_public/'
 
-svm_model_path = ROOT + 'output/intermediate_output/models/svm_model.pkl'
-bilstm_model_path = ROOT + 'output/intermediate_output/models/NYT_picks_train_SFU_test.tflearn'
+svm_model_path = Config.MODEL_PATH + 'svm_model.pkl'
+bilstm_model_path = Config.MODEL_PATH + 'NYT_picks_train_SFU_test.tflearn'
 
 # Load models
 #bilstm = Constructiveness_biLSTM(bilstm_model_path)
@@ -67,7 +68,7 @@ def feedback():
     comments = request.args.get('comments')
 
     file_exists = os.path.isfile('feedback.csv')
-    with open('feedback.csv', 'a+', newline='') as csvfile:
+    with open(Config.FEEDBACK_CSV_PATH, 'a+', newline='') as csvfile:
         writer = csv.writer(csvfile)
         if not file_exists:
             writer.writerow(['Text', 'Label', 'Comments'])
@@ -76,5 +77,5 @@ def feedback():
 
 
 if __name__ == '__main__':
-    app.run(host='localhost', port=9999)
+    app.run(host=Config.HOST, port=Config.PORT)
 
