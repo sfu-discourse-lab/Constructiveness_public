@@ -6,7 +6,7 @@ from sklearn.externals import joblib
 import sys
 sys.path.append('../../')
 from config import Config
-sys.path.append('../feature_extraction/')
+sys.path.append(Config.PROJECT_HOME + 'source/feature_extraction/')
 
 import feature_extractor
 from feature_extractor import FeatureExtractor
