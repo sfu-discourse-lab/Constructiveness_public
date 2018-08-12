@@ -7,8 +7,8 @@ import math
 sys.path.append('COMMENTIQ_code_subset/')
 import commentIQ_features
 from spacy_features import CommentLevelFeatures
-
-ROOT = '/Users/vkolhatk/dev/Constructiveness/'
+sys.path.append('../../')
+from config import Config
 
 class FeatureExtractor():
     '''
@@ -20,12 +20,12 @@ class FeatureExtractor():
         '''
         '''
         # Read all files
-        self.conjuctions_and_connectives = self.file2list(ROOT + 'resources/connectives.txt')
-        self.stance_adverbials = self.file2list(ROOT + 'resources/stance_adverbials.txt')
-        self.reasoning_verbs = self.file2list(ROOT + 'resources/reasoning_verbs.txt')
-        self.root_clauses = self.file2list(ROOT + 'resources/root_clauses.txt')
-        self.shell_nouns = self.file2list(ROOT + 'resources/shell_nouns.txt')
-        self.modals = self.file2list(ROOT + 'resources/modals.txt')
+        self.conjuctions_and_connectives = self.file2list(Config.RESOURCES_HOME + 'connectives.txt')
+        self.stance_adverbials = self.file2list(Config.RESOURCES_HOME + 'stance_adverbials.txt')
+        self.reasoning_verbs = self.file2list(Config.RESOURCES_HOME + 'reasoning_verbs.txt')
+        self.root_clauses = self.file2list(Config.RESOURCES_HOME + 'root_clauses.txt')
+        self.shell_nouns = self.file2list(Config.RESOURCES_HOME + 'shell_nouns.txt')
+        self.modals = self.file2list(Config.RESOURCES_HOME + 'modals.txt')
         self.data_csv = data_csv
         #self.df = pd.read_csv(data_csv, skiprows = [num for num in range(2000,50000)])
         self.df = pd.read_csv(data_csv)
@@ -258,33 +258,22 @@ class FeatureExtractor():
         print('Features CSV written: ', output_csv)
 
 def get_arguments():
-    parser = argparse.ArgumentParser(description='SFU Sentiment Calculator')
-
-    parser.add_argument('--gnm_annotated_data_path', '-gnmanno', type=str, dest='gnm_annotated_data_path', action='store',
-                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/constructiveness_and_toxicity_annotations_batches_1_to_12.csv',
-                        help="The gnm annotated training data csv")
+    parser = argparse.ArgumentParser(description='Constructiveness Feature Extractor')
 
     parser.add_argument('--train_dataset_path', '-tr', type=str, dest='train_data_path', action='store',
-                        #default = '/Users/vkolhatk/Data/Constructiveness/data/train/NYT_picks_constructive_YNACC_non_constructive.csv',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/train/SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
-                        help="The training data csv")
-
-    parser.add_argument('--train_gnm_dataset_path', '-trgnm', type=str, dest='train_gnm_data_path', action='store',
-                        default = '/Users/vkolhatk/Data/Constructiveness/data/train/constructiveness_crowdsource.csv',
-                        help="The Globe and Mail training data csv")
+                        default= Config.TRAIN_PATH + 'SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
+                        help="The path for the training data CSV.")
 
     parser.add_argument('--test_dataset_path', '-te', type=str, dest='test_data_path', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/test/SOCC_constructiveness.csv',
-                        help="The test dataset path for constructive and non-constructive comments")
+                        default= Config.TEST_PATH + 'SOCC_constructiveness.csv',
+                        help="The path for the training data CSV.")
 
     parser.add_argument('--train_features_csv', '-trf', type=str, dest='train_features_csv', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/train/SOCC_nyt_ync_features.csv',
-                        #default='/Users/vkolhatk/Data/Constructiveness/data/train/gnm_nyt_ync_features.csv',
-                        #default='/Users/vkolhatk/Data/Constructiveness/data/train/gnm_crowd_annotated_features.csv',
+                        default= Config.TRAIN_PATH + 'SOCC_nyt_ync_features.csv',
                         help="The file containing comments and extracted features for training data")
 
     parser.add_argument('--test_features_csv', '-tef', type=str, dest='test_features_csv', action='store',
-                        default='/Users/vkolhatk/Data/Constructiveness/data/test/features.csv',
+                        default = Config.TEST_PATH + 'features.csv',
                         help="The file containing comments and extracted features for test data")
 
     args = parser.parse_args()
