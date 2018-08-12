@@ -2,13 +2,15 @@ __author__      = "Varada Kolhatkar"
 import argparse
 import sys, re
 import numpy as np
-import pandas as pd
 import math
-sys.path.append('COMMENTIQ_code_subset/')
-import commentIQ_features
+
 from spacy_features import CommentLevelFeatures
+
 sys.path.append('../../')
 from config import Config
+
+sys.path.append(Config.PROJECT_HOME + 'source/feature_extraction/COMMENTIQ_code_subset/')
+import commentIQ_features
 
 class FeatureExtractor():
     '''
@@ -16,7 +18,7 @@ class FeatureExtractor():
     Extract comment features and write csvs with features
     '''
 
-    def __init__(self, data_csv, comment_column = 'pp_comment_text', label_column='constructive'):
+    def __init__(self, data_df, comment_column = 'pp_comment_text', label_column='constructive'):
         '''
         '''
         # Read all files
@@ -26,9 +28,10 @@ class FeatureExtractor():
         self.root_clauses = self.file2list(Config.RESOURCES_HOME + 'root_clauses.txt')
         self.shell_nouns = self.file2list(Config.RESOURCES_HOME + 'shell_nouns.txt')
         self.modals = self.file2list(Config.RESOURCES_HOME + 'modals.txt')
-        self.data_csv = data_csv
+        #self.data_csv = data_csv
         #self.df = pd.read_csv(data_csv, skiprows = [num for num in range(2000,50000)])
-        self.df = pd.read_csv(data_csv)
+        #self.df = pd.read_csv(data_csv)
+        self.df = data_df
         print(self.df.columns)
         print(self.df.shape)
         self.comment_col = comment_column
@@ -299,25 +302,15 @@ if __name__ == "__main__":
              'length', 'average_word_length', 'readability_score', 'personal_exp_score',
              'named_entity_count', 'nSents', 'avg_words_per_sent']
     #fe_train.write_features_csv(args.train_features_csv, cols)
-
-    fe_train = FeatureExtractor(args.train_data_path)
+    '''
+    fe_train = FeatureExtractor(pd.read_csv(args.train_data_path))
     fe_train.extract_features()
     fe_train.extract_crowd_annotated_features()
     fe_train.write_features_csv(args.train_features_csv)
-    #nyt_ync_df = fe_train.get_features_df()
-    #print('columns: ', nyt_ync_df.columns)
-
-    #fe_gnm_train = FeatureExtractor(args.train_gnm_data_path)
-    #fe_gnm_train.extract_features()
-    #fe_gnm_train.extract_crowd_annotated_features()
-    #fe_gnm_train_df = fe_gnm_train.get_features_df()
-    #print('columns: ', fe_gnm_train_df.columns)
-
-    #df = pd.concat([nyt_ync_df,fe_gnm_train_df])
-    #df.to_csv(args.train_features_csv, index = False)
-    #fe_train.write_features_csv(args.train_features_csv)
-
-    #fe_test = FeatureExtractor(args.test_data_path)
+    nyt_ync_df = fe_train.get_features_df()
+    print('columns: ', nyt_ync_df.columns)
+    '''
+     #fe_test = FeatureExtractor(args.test_data_path)
     #fe_test.extract_features(args.test_features_csv)
 
 
