@@ -56,7 +56,7 @@ class ConstructivenessClassifier():
         self.pipeline = None
 
         self.X1 = self.df_train[self.df_train.columns.drop(target_col)]
-        print('CSV columns: ', self.X1.columns)
+        #print('CSV columns: ', self.X1.columns)
         self.y1 = self.df_train[target_col]
 
         self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(
@@ -116,7 +116,13 @@ class ConstructivenessClassifier():
             print()
 
     def build_classifier_pipeline(self,
-                                  classifier = SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=42),
+                                  classifier = SGDClassifier(loss='hinge', 
+                                                             penalty='l2', 
+                                                             alpha=1e-3, 
+                                                             max_iter=20, 
+                                                             tol=1e-4, 
+                                                             random_state=42),
+                                  
                                   #=SVC(C=1000, gamma=0.001, kernel='rbf')
                                   feature_set = []):
         '''
@@ -154,6 +160,7 @@ class ConstructivenessClassifier():
         #print('SVM correct prediction: {:4.2f}'.format(np.mean(preds == self.y_test)))
         #print(metrics.classification_report(self.y_test, preds, target_names=['non-constructive', 'constructive']))#
 
+        
     def run_nfold_cross_validation(self, n=5):
         '''
         :param n:
@@ -161,8 +168,12 @@ class ConstructivenessClassifier():
         '''
         pipeline = self.build_classifier_pipeline()
         scores = cross_val_score(pipeline, self.X_train, self.y_train, cv=n, scoring='f1_micro')
-        print('f1_micro scores: ', scores)
-        print('Mean f1_micro: ', np.mean(scores))
+        results = {}
+        results['scores'] = scores
+        results['mean_score'] = np.mean(scores)
+        results['variance'] = np.var(scores)
+        return results 
+    
 
     def test_classifier(self,
                         model_path=''):
@@ -176,6 +187,7 @@ class ConstructivenessClassifier():
         print('SVM correct prediction: {:4.2f}'.format(np.mean(predicted == te_targets)))
         print(metrics.classification_report(te_targets, predicted, target_names=['non-constructive', 'constructive']))
 
+        
     def plot_coefficients(self, classifier, feature_names, top_features=20):
         import matplotlib.pyplot as plt
         coef = classifier.coef_.ravel()
