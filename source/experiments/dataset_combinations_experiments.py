@@ -24,13 +24,43 @@ def get_arguments():
     return args
 
 
-def run_cross_validation_experiments(training_feats_df, data_sources = ['SOCC'], n = 10):
+def run_cross_validation_experiments(feats_df, n = 10):
 
-    # Subset the feature vector based on the data sources
-    subset_df = training_feats_df[training_feats_df['source'].isin(data_sources)]
-    svm_classifier = ConstructivenessClassifier(subset_df)
-    svm_classifier.run_nfold_cross_validation(n)
+    svm_classifier = ConstructivenessClassifier(feats_df)
+    return svm_classifier.run_nfold_cross_validation(n)
 
+
+def run_data_subset_experiments(training_feats_df):
+    '''
+    '''        
+    data_sources = ['SOCC', 
+                    'NYTPicks+YNACC', 
+                    'SOCC+NYTPicks+YNACC', 
+                    'SOCC+NYTPicks']        
+    # Cross validation experiments
+    print('\n===============================\n')
+    print('Cross validation experiments: ')
+    print('\n===============================\n')
+    
+    for data_source in data_sources:
+        print('Data source: ', data_source) 
+        sources = data_source.split('+')
+        
+        if data_source.startswith('SOCC+NYTPicks'):
+            # sample negative examples from SOCC and the same number of +ve examples from NYTPicks
+            subset_df = training_feats_df[training_feats_df['source'].isin(sources)]
+            SOCC_neg_df = subset_df[(subset_df['source'] == 'SOCC') & (subset_df['constructive'] == 0)]
+            NYTPicks_df = subset_df[(subset_df['source'] == 'NYTPicks')]                        
+            NYTPicks_df_sample = NYTPicks_df.sample(n = SOCC_neg_df.shape[0])
+            train_df = pd.concat([SOCC_neg_df, NYTPicks_df_sample])    
+        else:             
+            train_df = training_feats_df[training_feats_df['source'].isin(sources)]        
+            
+        print('Size of the training data: ', train_df.shape[0])
+        print('Cross-validation results: ', run_cross_validation_experiments(train_df))
+        print('\n----------------------------\n')            
+        
+    
 if __name__ == "__main__":
     args = get_arguments()
     print(args)
@@ -38,7 +68,7 @@ if __name__ == "__main__":
     # Training data with features csv
     #svm_classifier = ConstructivenessClassifier(args.train_dataset_path, args.test_dataset_path, args.features)
     training_feats_df = pd.read_csv(args.train_dataset_path)
-    run_cross_validation_experiments(training_feats_df)
+    run_data_subset_experiments(training_feats_df)
 
     #svm_classifier = ConstructivenessClassifier(args.train_dataset_path, args.test_dataset_path, args.features)
     #svm_classifier.run_nfold_cross_validation(training_feats_df, n=10)
