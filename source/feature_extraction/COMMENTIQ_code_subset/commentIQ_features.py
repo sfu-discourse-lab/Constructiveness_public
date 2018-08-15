@@ -12,6 +12,10 @@ We use some of the features used in this work for constructiveness.
 
 import re
 import math
+import sys
+sys.path.append('../../')
+from config import Config
+
 
 class TextStatistics(object):
     '''
@@ -317,7 +321,7 @@ vocab_freq = {}
 nDocuments = 0
 
 # List of Personal Words from LIWC dictionary
-with open("/Users/vkolhatk/dev/Constructiveness/resources/personal.txt") as f:
+with open(Config.RESOURCES_HOME + "personal.txt") as f:
     personal_words = f.read().splitlines()
 
 def NormalizeVector(vector):
