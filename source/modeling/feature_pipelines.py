@@ -250,12 +250,18 @@ def toxicity_chars_feats_pipeline():
     ])
     return toxicity_chars_feats
 
-def build_feature_pipelines_and_unions():
+def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feats',
+                                                     'argumentation_feats',
+                                                     'COMMENTIQ_feats',
+                                                     'named_entity_feats',
+                                                     'constructiveness_chars_feats',
+                                                     'non_constructiveness_chars_feats',
+                                                     'toxicity_chars_feats']):
     '''
     :return: re
     '''
 
-    text = text_feats_pipeline()
+    text_feats = text_feats_pipeline()
     length_feats = length_feats_pipeline()
     argumentation_feats = argumentation_feats_pipeline()
     COMMENTIQ_feats = COMMENTIQ_feats_pipeline()
@@ -263,18 +269,24 @@ def build_feature_pipelines_and_unions():
     constructiveness_chars_feats = constructiveness_chars_feats_pipeline()
     non_constructiveness_chars_feats = non_constructiveness_chars_feats_pipeline()
     toxicity_chars_feats = toxicity_chars_feats_pipeline()
-    feats = FeatureUnion([
-        ('text', text),
-        ('length_feats', length_feats),
-        ('argumentation_feats', argumentation_feats),
-        ('COMMENTIQ_feats', COMMENTIQ_feats),
-        ('named_entity_feats', named_entity_feats),
-        ('constructiveness_chars_feats', constructiveness_chars_feats),
-        ('non_constructiveness_chars_feats', non_constructiveness_chars_feats),
-        ('toxicity_chars_feats', toxicity_chars_feats)
-    ])
+    
+    feat_sets_dict = {'text_feats': text_feats,
+                      'length_feats': length_feats,
+                      'argumentation_feats': argumentation_feats,
+                      'COMMENTIQ_feats': COMMENTIQ_feats,
+                      'named_entity_feats': named_entity_feats,
+                      'constructiveness_chars_feats': constructiveness_chars_feats,
+                      'non_constructiveness_chars_feats': non_constructiveness_chars_feats,
+                      'toxicity_chars_feats': toxicity_chars_feats
+                     }
+    
+    feat_tuples = [(feat, feat_sets_dict[feat]) for feat in feature_set]
+    feats = FeatureUnion(feat_tuples)
+
     return feats
 
 if __name__ == "__main__":
     feats = build_feature_pipelines_and_unions()
     print(feats)
+
+    

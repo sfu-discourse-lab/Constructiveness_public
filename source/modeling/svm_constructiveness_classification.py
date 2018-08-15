@@ -16,6 +16,12 @@ from sklearn.feature_selection import RFE
 from sklearn.feature_selection import RFECV
 from sklearn.model_selection import StratifiedKFold
 
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import learning_curve
+from sklearn.model_selection import ShuffleSplit
+
 from sklearn import metrics
 import numpy as np
 import pandas as pd
@@ -27,6 +33,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
 from feature_pipelines import build_feature_pipelines_and_unions
 
+from itertools import chain, combinations
+from sklearn.cross_validation import cross_val_score
 
 class ConstructivenessClassifier():
     '''
@@ -115,22 +123,21 @@ class ConstructivenessClassifier():
             print(classification_report(y_true, y_pred))
             print()
 
-    def build_classifier_pipeline(self,
+    def build_classifier_pipeline(self, feature_set, 
                                   classifier = SGDClassifier(loss='hinge', 
                                                              penalty='l2', 
                                                              alpha=1e-3, 
-                                                             max_iter=20, 
+                                                             max_iter=50, 
                                                              tol=1e-4, 
-                                                             random_state=42),
+                                                             random_state=42)):
                                   
-                                  #=SVC(C=1000, gamma=0.001, kernel='rbf')
-                                  feature_set = []):
+                                  #=SVC(C=1000, gamma=0.001, kernel='rbf')):
         '''
         :param feature_set:
         :param classifier:
         :return:
         '''
-        feats = build_feature_pipelines_and_unions()
+        feats = build_feature_pipelines_and_unions(feature_set)
         pipeline = Pipeline([
             ('features',feats),
             #('feature_selection', SelectFromModel(SVC(kernel = 'linear'))),
@@ -145,11 +152,11 @@ class ConstructivenessClassifier():
     def train_classifier(self,
                          model_path,
                          #classifier,
-                         feature_set = []):
+                         feature_set):
         '''
         :return:
         '''
-        self.pipeline = self.build_classifier_pipeline()
+        self.pipeline = self.build_classifier_pipeline(feature_set = feature_set)
         self.pipeline.fit(self.X1, self.y1)
         joblib.dump(self.pipeline, model_path)
         s = pickle.dumps(self.pipeline)
@@ -161,12 +168,12 @@ class ConstructivenessClassifier():
         #print(metrics.classification_report(self.y_test, preds, target_names=['non-constructive', 'constructive']))#
 
         
-    def run_nfold_cross_validation(self, n=5):
+    def run_nfold_cross_validation(self, feature_set, n=5):
         '''
         :param n:
         :return:
         '''
-        pipeline = self.build_classifier_pipeline()
+        pipeline = self.build_classifier_pipeline(feature_set)
         scores = cross_val_score(pipeline, self.X_train, self.y_train, cv=n, scoring='f1_micro')
         results = {}
         results['scores'] = scores
@@ -175,32 +182,103 @@ class ConstructivenessClassifier():
         return results 
     
 
-    def test_classifier(self,
-                        model_path=''):
-        '''
-        :return:
-        '''
-        te_targets = self.df_test['constructive'].tolist()
-        predicted = self.pipeline.predict(self.df_test)
-        print(predicted)
-
-        print('SVM correct prediction: {:4.2f}'.format(np.mean(predicted == te_targets)))
-        print(metrics.classification_report(te_targets, predicted, target_names=['non-constructive', 'constructive']))
-
+    def get_best_feature_subset(self, feature_set, n=3):                
+        n_features = len(feature_set)
+        subsets = (combinations(feature_set, k) for k in range(1,len(feature_set)))
         
-    def plot_coefficients(self, classifier, feature_names, top_features=20):
-        import matplotlib.pyplot as plt
-        coef = classifier.coef_.ravel()
-        top_positive_coefficients = np.argsort(coef)[-top_features:]
-        top_negative_coefficients = np.argsort(coef)[:top_features]
-        top_coefficients = np.hstack([top_negative_coefficients, top_positive_coefficients])
-        # create plot
-        plt.figure(figsize=(15, 5))
-        colors = ['red' if c < 0 else 'blue' for c in coef[top_coefficients]]
-        plt.bar(np.arange(2 * top_features), coef[top_coefficients], color=colors)
-        feature_names = np.array(feature_names)
-        plt.xticks(np.arange(1, 1 + 2 * top_features), feature_names[top_coefficients], rotation=60, ha='right')
-        plt.show()
+        best_score = -np.inf
+        best_subset = None
+        
+        for subset in subsets:
+            for ss in subset: 
+                results = self.run_nfold_cross_validation(feature_set = ss)
+                if results['mean_score'] > best_score:
+                    best_score, best_subset = results['mean_score'], ss
+
+        return best_subset, best_score
+    
+    
+    def plot_learning_curve(self, estimator, title, X, y, ylim=None, cv=None,
+                            n_jobs=1, train_sizes=np.linspace(.1, 1.0, 5)):
+        """
+        Generate a simple plot of the test and training learning curve.
+
+        Parameters
+        ----------
+        estimator : object type that implements the "fit" and "predict" methods
+            An object of that type which is cloned for each validation.
+
+        title : string
+            Title for the chart.
+
+        X : array-like, shape (n_samples, n_features)
+            Training vector, where n_samples is the number of samples and
+            n_features is the number of features.
+
+        y : array-like, shape (n_samples) or (n_samples, n_features), optional
+            Target relative to X for classification or regression;
+            None for unsupervised learning.
+
+        ylim : tuple, shape (ymin, ymax), optional
+            Defines minimum and maximum yvalues plotted.
+
+        cv : int, cross-validation generator or an iterable, optional
+            Determines the cross-validation splitting strategy.
+            Possible inputs for cv are:
+              - None, to use the default 3-fold cross-validation,
+              - integer, to specify the number of folds.
+              - An object to be used as a cross-validation generator.
+              - An iterable yielding train/test splits.
+
+            For integer/None inputs, if ``y`` is binary or multiclass,
+            :class:`StratifiedKFold` used. If the estimator is not a classifier
+            or if ``y`` is neither binary nor multiclass, :class:`KFold` is used.
+
+            Refer :ref:`User Guide <cross_validation>` for the various
+            cross-validators that can be used here.
+
+        n_jobs : integer, optional
+            Number of jobs to run in parallel (default 1).
+        """
+        plt.figure()
+        plt.title(title)
+        if ylim is not None:
+            plt.ylim(*ylim)
+        plt.xlabel("Training examples")
+        plt.ylabel("Score")
+        train_sizes, train_scores, test_scores = learning_curve(
+            estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
+        train_scores_mean = np.mean(train_scores, axis=1)
+        train_scores_std = np.std(train_scores, axis=1)
+        test_scores_mean = np.mean(test_scores, axis=1)
+        test_scores_std = np.std(test_scores, axis=1)
+        plt.grid()
+
+        plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                         train_scores_mean + train_scores_std, alpha=0.1,
+                         color="r")
+        plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                         test_scores_mean + test_scores_std, alpha=0.1, color="g")
+        plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+                 label="Training score")
+        plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+                 label="Cross-validation score")
+
+        plt.legend(loc="best")
+        return plt
 
 
+    def create_learning_curves(self, feature_set):
+        estimator = self.build_classifier_pipeline(feature_set = feature_set)
+
+        title = "Learning Curves with classifier: "
+
+        # Cross validation with 100 iterations to get smoother mean test and train
+        # score curves, each time with 20% data randomly selected as a validation set.
+        cv = ShuffleSplit(n_splits=100, test_size=0.2, random_state=0)
+        print('plot learning cures:  ')
+        self.plot_learning_curve(estimator, title, self.X1, self.y1, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
+        print('Show the plots')
+        plt.show()        
+        
 
