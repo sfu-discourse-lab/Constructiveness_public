@@ -39,7 +39,7 @@ tf.logging.set_verbosity(tf.logging.INFO)
 import sys
 sys.path.append('../../')
 from config import Config
-from deep_learning_data_preprocessing_and_representation import *
+from data_preprocessing_and_representation_for_deep_learning import *
 import pickle as pkl
 
 class BiLSTMConstructivenessClassifier():
