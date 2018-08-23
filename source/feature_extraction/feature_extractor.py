@@ -2,6 +2,7 @@ __author__      = "Varada Kolhatkar"
 import argparse
 import sys, re
 import numpy as np
+import pandas as pd
 import math
 
 from spacy_features import CommentLevelFeatures
@@ -210,7 +211,7 @@ class FeatureExtractor():
         Description: Given the output CSV file path, output_csv, this function extracts features and writes
         them in output_csv.
         '''
-
+        
         self.df['has_conjunctions_and_connectives'] = self.df[self.comment_col].apply\
             (self.has_conjunctions_and_connectives)
 
@@ -249,9 +250,9 @@ class FeatureExtractor():
                                      'named_entity_count', 'nSents', 'avg_words_per_sent',
                                        'specific_points', 'dialogue', 'no_con',
                                        'evidence', 'personal_story', 'solution', 'no_respect', 'no_non_con',
-                                       'provocative', 'noncon_other', 'sarcastic', 'non_relevant',
+                                       'provocative', 'sarcastic', 'non_relevant',
                                        'unsubstantial', 'personal_attack', 'teasing', 'no_toxic', 'abusive',
-                                       'toxic_other', 'embarrassment', 'inflammatory'
+                                       'embarrassment', 'inflammatory'
                                    ]):
         '''
         :param cols:
@@ -264,7 +265,8 @@ def get_arguments():
     parser = argparse.ArgumentParser(description='Constructiveness Feature Extractor')
 
     parser.add_argument('--train_dataset_path', '-tr', type=str, dest='train_data_path', action='store',
-                        default= Config.TRAIN_PATH + 'SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
+                        #default= Config.TRAIN_PATH + 'SOCC_NYT_picks_constructive_YNACC_non_constructive.csv',
+                        default= Config.SOCC_ANNOTATED_WITH_PERSPECTIVE_SCORES, 
                         help="The path for the training data CSV.")
 
     parser.add_argument('--test_dataset_path', '-te', type=str, dest='test_data_path', action='store',
@@ -272,7 +274,8 @@ def get_arguments():
                         help="The path for the training data CSV.")
 
     parser.add_argument('--train_features_csv', '-trf', type=str, dest='train_features_csv', action='store',
-                        default= Config.TRAIN_PATH + 'SOCC_nyt_ync_features.csv',
+                        #default= Config.TRAIN_PATH + 'SOCC_nyt_ync_features.csv',
+                        default= Config.TRAIN_PATH + 'system_crowd_perspective_features.csv',
                         help="The file containing comments and extracted features for training data")
 
     parser.add_argument('--test_features_csv', '-tef', type=str, dest='test_features_csv', action='store',
@@ -286,30 +289,41 @@ if __name__ == "__main__":
     args = get_arguments()
     print(args)
 
-    #fe_train = FeatureExtractor(args.train_gnm_data_path)
-    #fe_train.extract_features(args.train_gnm_features_csv)
-    #fe_train = FeatureExtractor(args.gnm_annotated_data_path)
-    #fe_train.extract_crowd_annotated_features()
-    #fe_train.extract_features()
-
-    cols = ['pp_comment_text', 'constructive',
+    df = pd.read_csv(args.train_features_csv)
+    ndf = df.drop(['toxic_other', 'noncon_other'], axis=1)    
+    ndf.to_csv(args.train_features_csv, index = False)
+    sys.exit(0)
+    cols = ['pp_comment_text', 'constructive', 'source',
             'specific_points', 'dialogue', 'no_con',
             'evidence', 'personal_story', 'solution', 'no_respect', 'no_non_con',
-            'provocative', 'noncon_other', 'sarcastic', 'non_relevant',
+            'provocative', 'sarcastic', 'non_relevant',
             'unsubstantial', 'personal_attack', 'teasing', 'no_toxic', 'abusive',
-            'toxic_other', 'embarrassment', 'inflammatory', 'has_conjunctions_and_connectives',
-             'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
-             'length', 'average_word_length', 'readability_score', 'personal_exp_score',
-             'named_entity_count', 'nSents', 'avg_words_per_sent']
-    #fe_train.write_features_csv(args.train_features_csv, cols)
-    '''
+            'embarrassment', 'inflammatory', 'has_conjunctions_and_connectives',
+            'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
+            'length', 'average_word_length', 'readability_score', 'personal_exp_score',
+            'named_entity_count', 'nSents', 'avg_words_per_sent', 
+            'FLIRTATION_probability', 'GENDER_probability',
+            'HEALTH_AGE_DISABILITY_probability', 'RELIGION_probability',
+            'RNE_probability', 'SEVERE_TOXICITY_probability',
+            'SEXUALLY_EXPLICIT_probability', 'SEXUAL_ORIENTATION_probability',
+            'TOXICITY_probability', 'TOXICITY_IDENTITY_HATE_probability',
+            'TOXICITY_INSULT_probability', 'TOXICITY_OBSCENE_probability',
+            'TOXICITY_THREAT_probability', 'ATTACK_ON_AUTHOR_probability',
+            'ATTACK_ON_COMMENTER_probability', 'ATTACK_ON_PUBLISHER_probability',
+            'INCOHERENT_probability', 'INFLAMMATORY_probability',
+            'LIKELY_TO_REJECT_probability', 'OBSCENE_probability',
+            'OFF_TOPIC_probability', 'SPAM_probability',
+            'UNSUBSTANTIAL_probability' 
+           ]
+    
+    #fe_train.write_features_csv(args.train_features_csv, cols)    
     fe_train = FeatureExtractor(pd.read_csv(args.train_data_path))
     fe_train.extract_features()
     fe_train.extract_crowd_annotated_features()
-    fe_train.write_features_csv(args.train_features_csv)
-    nyt_ync_df = fe_train.get_features_df()
-    print('columns: ', nyt_ync_df.columns)
-    '''
+    fe_train.write_features_csv(args.train_features_csv, cols = cols)
+    #nyt_ync_df = fe_train.get_features_df()
+    #print('columns: ', nyt_ync_df.columns)
+    
      #fe_test = FeatureExtractor(args.test_data_path)
     #fe_test.extract_features(args.test_features_csv)
 
