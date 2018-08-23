@@ -250,17 +250,179 @@ def toxicity_chars_feats_pipeline():
     ])
     return toxicity_chars_feats
 
+def perspective_content_value_feats_pipeline():
+    '''
+    :return:
+    '''
+    INCOHERENT_probability = Pipeline([
+        ('selector', NumberSelector(key='INCOHERENT_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    OFF_TOPIC_probability = Pipeline([
+        ('selector', NumberSelector(key='OFF_TOPIC_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    SPAM_probability = Pipeline([
+        ('selector', NumberSelector(key='SPAM_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    UNSUBSTANTIAL_probability = Pipeline([
+        ('selector', NumberSelector(key='UNSUBSTANTIAL_probability')),
+        ('standard', StandardScaler())
+    ])
+    
+    LIKELY_TO_REJECT_probability = Pipeline([
+        ('selector', NumberSelector(key='LIKELY_TO_REJECT_probability')),
+        ('standard', StandardScaler())
+    ])
+    
+    perspective_content_value_feats = FeatureUnion([
+        ('INCOHERENT_probability', INCOHERENT_probability),
+        ('OFF_TOPIC_probability', OFF_TOPIC_probability),
+        ('SPAM_probability', SPAM_probability),
+        ('UNSUBSTANTIAL_probability', UNSUBSTANTIAL_probability),
+        ('LIKELY_TO_REJECT_probability', LIKELY_TO_REJECT_probability)        
+    ])
+    return perspective_content_value_feats
+
+
+def perspective_aggressiveness_feats_pipeline():
+    '''
+    '''
+    ATTACK_ON_AUTHOR_probability = Pipeline([
+        ('selector', NumberSelector(key='ATTACK_ON_AUTHOR_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    ATTACK_ON_COMMENTER_probability = Pipeline([
+        ('selector', NumberSelector(key='ATTACK_ON_COMMENTER_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    ATTACK_ON_PUBLISHER_probability = Pipeline([
+        ('selector', NumberSelector(key='ATTACK_ON_PUBLISHER_probability')),
+        ('standard', StandardScaler())
+    ])
+    
+    perspective_aggressiveness_feats = FeatureUnion([
+        ('ATTACK_ON_AUTHOR_probability', ATTACK_ON_AUTHOR_probability),
+        ('ATTACK_ON_COMMENTER_probability', ATTACK_ON_COMMENTER_probability),    
+        ('ATTACK_ON_PUBLISHER_probability', ATTACK_ON_PUBLISHER_probability)                
+    ])
+    return perspective_aggressiveness_feats
+
+
+def perspective_individual_chars_feats_pipeline():
+    '''
+    '''
+    GENDER_probability = Pipeline([
+        ('selector', NumberSelector(key='GENDER_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    HEALTH_AGE_DISABILITY_probability = Pipeline([
+        ('selector', NumberSelector(key='HEALTH_AGE_DISABILITY_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    RELIGION_probability = Pipeline([
+        ('selector', NumberSelector(key='RELIGION_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    SEXUAL_ORIENTATION_probability = Pipeline([
+        ('selector', NumberSelector(key='SEXUAL_ORIENTATION_probability')),
+        ('standard', StandardScaler())
+    ])
+    
+    
+    perspective_individual_chars_feats = FeatureUnion([
+        ('GENDER_probability', GENDER_probability),
+        ('HEALTH_AGE_DISABILITY_probability', HEALTH_AGE_DISABILITY_probability),    
+        ('RELIGION_probability', RELIGION_probability),
+        ('SEXUAL_ORIENTATION_probability', SEXUAL_ORIENTATION_probability),
+    ])
+    return perspective_individual_chars_feats
+
+def perspecitive_toxicity_feats_pipeline():
+    '''
+    '''
+    SEVERE_TOXICITY_probability = Pipeline([
+        ('selector', NumberSelector(key='SEVERE_TOXICITY_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    SEXUALLY_EXPLICIT_probability = Pipeline([
+        ('selector', NumberSelector(key='SEXUALLY_EXPLICIT_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    TOXICITY_probability = Pipeline([
+        ('selector', NumberSelector(key='TOXICITY_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    TOXICITY_IDENTITY_HATE_probability = Pipeline([
+        ('selector', NumberSelector(key='TOXICITY_IDENTITY_HATE_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    TOXICITY_INSULT_probability = Pipeline([
+        ('selector', NumberSelector(key='TOXICITY_INSULT_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    TOXICITY_OBSCENE_probability = Pipeline([
+        ('selector', NumberSelector(key='TOXICITY_OBSCENE_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    TOXICITY_THREAT_probability = Pipeline([
+        ('selector', NumberSelector(key='TOXICITY_THREAT_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    INFLAMMATORY_probability = Pipeline([
+        ('selector', NumberSelector(key='INFLAMMATORY_probability')),
+        ('standard', StandardScaler())
+    ])
+
+    OBSCENE_probability = Pipeline([
+        ('selector', NumberSelector(key='OBSCENE_probability')),
+        ('standard', StandardScaler())
+    ])
+    
+    perspecitive_toxicity_feats = FeatureUnion([
+        ('SEVERE_TOXICITY_probability', SEVERE_TOXICITY_probability),
+        ('SEXUALLY_EXPLICIT_probability', SEXUALLY_EXPLICIT_probability),    
+        ('TOXICITY_probability', TOXICITY_probability),
+        ('TOXICITY_IDENTITY_HATE_probability', TOXICITY_IDENTITY_HATE_probability),
+        ('TOXICITY_INSULT_probability', TOXICITY_INSULT_probability),
+        ('TOXICITY_OBSCENE_probability', TOXICITY_OBSCENE_probability),
+        ('TOXICITY_THREAT_probability', TOXICITY_THREAT_probability),
+        ('INFLAMMATORY_probability', INFLAMMATORY_probability),
+        ('OBSCENE_probability', OBSCENE_probability)        
+    ])
+    return perspecitive_toxicity_feats
+
+
 def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feats',
                                                      'argumentation_feats',
                                                      'COMMENTIQ_feats',
                                                      'named_entity_feats',
                                                      'constructiveness_chars_feats',
                                                      'non_constructiveness_chars_feats',
-                                                     'toxicity_chars_feats']):
+                                                     'toxicity_chars_feats', 
+                                                     'perspective_content_value_feats', 
+                                                     'perspective_aggressiveness_feats',
+                                                     'perspective_individual_chars_feats',
+                                                     'perspecitive_toxicity_feats']):
     '''
     :return: re
     '''
-
     text_feats = text_feats_pipeline()
     length_feats = length_feats_pipeline()
     argumentation_feats = argumentation_feats_pipeline()
@@ -269,6 +431,10 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
     constructiveness_chars_feats = constructiveness_chars_feats_pipeline()
     non_constructiveness_chars_feats = non_constructiveness_chars_feats_pipeline()
     toxicity_chars_feats = toxicity_chars_feats_pipeline()
+    perspective_content_value_feats = perspective_content_value_feats_pipeline()
+    perspective_aggressiveness_feats = perspective_aggressiveness_feats_pipeline()
+    perspective_individual_chars_feats = perspective_individual_chars_feats_pipeline()
+    perspecitive_toxicity_feats = perspecitive_toxicity_feats_pipeline()
     
     feat_sets_dict = {'text_feats': text_feats,
                       'length_feats': length_feats,
@@ -277,7 +443,11 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
                       'named_entity_feats': named_entity_feats,
                       'constructiveness_chars_feats': constructiveness_chars_feats,
                       'non_constructiveness_chars_feats': non_constructiveness_chars_feats,
-                      'toxicity_chars_feats': toxicity_chars_feats
+                      'toxicity_chars_feats': toxicity_chars_feats,
+                      'perspective_content_value_feats': perspective_content_value_feats,
+                      'perspective_aggressiveness_feats': perspective_aggressiveness_feats, 
+                      'perspective_individual_chars_feats': perspective_individual_chars_feats,
+                      'perspecitive_toxicity_feats': perspecitive_toxicity_feats
                      }
     
     feat_tuples = [(feat, feat_sets_dict[feat]) for feat in feature_set]
