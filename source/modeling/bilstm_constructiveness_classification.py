@@ -23,7 +23,7 @@ import tflearn
 import sys, os, argparse, pickle, random, smart_open
 import tensorflow as tf
 from tflearn.data_utils import to_categorical, pad_sequences
-from tflearn.datasets import imdb
+#from tflearn.datasets import imdb
 from tflearn.layers.core import input_data, dropout, fully_connected
 from tflearn.layers.embedding_ops import embedding
 from tflearn.layers.recurrent import bidirectional_rnn, BasicLSTMCell
@@ -36,33 +36,86 @@ import nltk
 from nltk import word_tokenize
 from nltk import sent_tokenize
 tf.logging.set_verbosity(tf.logging.INFO)
-ROOT = '/home/ling-discourse-lab/Varada/'
+import sys
+sys.path.append('../../')
+from config import Config
+from deep_learning_data_preprocessing_and_representation import *
+import pickle as pkl
 
-class Constructiveness_biLSTM():
-    def __init__(self, model_path, input_data_path=None, mode='test'):        
-        self.model_path = model_path
+class BiLSTMConstructivenessClassifier():
+    def __init__(self, train_data_path = Config.SOCC_ANNOTATED_CONSTRUCTIVENESS_12000, 
+                       test_data_path = Config.SOCC_ANNOTATED_CONSTRUCTIVENESS_1000, 
+                       mode = 'train',
+                       model_path = Config.BILSTM_MODEL_PATH):        
+
         self.model = None
-        self.net = None    
-        self.initialize()        
-        self.glove_path = ROOT + 'data/glove/glove.840B.vocab'    
-        gf = smart_open.smart_open(self.glove_path, 'rb')
+        self.net = None
+        self.initialize()
         self.word_to_index = {}
         self.index_to_word = {}
         index = 0 
         self.words = []
-        for line in gf:
+        '''for line in self.dictionary:
             line = line.strip()
             #line = line.decode("utf-8", errors='ignore')
             self.word_to_index[line] = index
             self.index_to_word[index] = line
             self.words.append(line)
             index+=1
-        if mode == 'train':
-            self.input_data_path = input_data_path
-            self.train_bilstm()
-        elif mode == 'test':
-            #print('network built')
-            self.model.load(self.model_path)
+           '''
+        if mode == 'train': 
+            train_set = create_numeric_representation_of_text_and_labels()
+            self.train_bilstm(train_set)
+        else:
+            self.model.load(model_path)                       
+            
+        #print('Test Accuracy', self.model.evaluate(X=x_test, Y=y_test))
+        #accuracy = self.predict(self.model, x_test, y_test)
+        #print('Accuracy: ', accuracy)
+       
+    def my_evaluate(self, predictions, gold):
+        '''
+        :param predictions:
+        :param gold:
+        :return:
+        '''
+        count = 0
+        correct = 0
+        total = 0
+        gold_data = []
+        preds = []
+        print('#GOLD: ', len(gold))
+        print('#PREDICTIONS: ', len(predictions))
+        for i in range(len(gold)):
+            gold_winner = 0 if gold[i][0] > gold[i][1] else 1
+            gold_data.append(gold_winner)
+            prediction_winner = 0 if predictions[i][0] > predictions[i][1] else 1
+            preds.append(prediction_winner)
+            if gold_winner == prediction_winner:
+                correct += 1
+            total += 1
+
+        print('Correct/Total ', correct, '/', total)
+        accuracy = (correct * 100) / float(total)
+        print('Accuracy: ', accuracy)
+
+        print('LSTM correct prediction: {:4.2f}'.format(np.mean(preds == gold_data)))
+        print(metrics.classification_report(gold_data, preds, target_names=['non-constructive', 'constructive']))
+
+        return accuracy
+
+    
+    def predict(self, model, testX, testY):
+        print(model.evaluate(testX, testY))
+
+        predictions = model.predict(testX)
+        count = 0
+        for prediction in predictions:
+            print(prediction, '=>', testY[count])
+            count += 1
+        accuracy = my_evaluate(predictions, testY)
+        return accuracy
+        
 
     def build_network(self, ilearning_rate=0.001):
         '''
@@ -90,9 +143,6 @@ class Constructiveness_biLSTM():
         self.net = self.build_network()
         self.model = tflearn.DNN(self.net, clip_gradients=0., tensorboard_verbose=0)
 
-    def tokenize(self, comment):
-        tokenized = " ".join(sent_tokenize(" ".join(word_tokenize(comment))))
-        return tokenized
 
     def indices_to_sentences(self, index_list):
         '''
@@ -102,8 +152,18 @@ class Constructiveness_biLSTM():
         comment_list = [self.index_to_word[idx].decode("utf-8") for idx in index_list]
         return " ".join(comment_list)
 
+    def predict_single_example(self, test_comment):
+        #print('model loaded')
+        test_example = prepare_test_example(test_comment)
+        #print('test example prepaped', test_example)
+        prediction = self.model.predict(test_example)
+        #prediction = predict_test_example(model, test_example)
+        prediction_winner = 'Non constructive' if prediction[0][0] > prediction[0][1] else 'Constructive'
+        print(prediction, '=>', prediction_winner)
+        return prediction_winner    
+    
     def prepare_test_example(self, test_comment):
-        comment_tokenized = self.tokenize(test_comment)
+        comment_tokenized = tokenize(test_comment)
         mapped_comment = []
         for w in comment_tokenized.split():
             w = w.lower()
@@ -118,39 +178,11 @@ class Constructiveness_biLSTM():
         testX = pad_sequences(testX, maxlen=200, value=0.)
         return testX 
     
-    def prepare_data(self):
-        train, validation, test = imdb.load_data(path=self.input_data_path, n_words=50000, valid_portion=0.1)
-        trainX, trainY = train
-        validationX, validationY = validation
-        testX, testY = test
-        
-        print('trainX[-1] after load data: ', trainX[1000])
-        print(self.indices_to_sentences(trainX[1000]))
 
-        print('Train_len: ', len(trainX), len(trainY))
-        print('Validation_len: ', len(validationX), len(validationY))
-        print('Test len: ', len(testX), len(testY))
-        print('test data: ', testX[0:10])
-        
-        # Data preprocessing
-        # Sequence padding
-        trainX = pad_sequences(trainX, maxlen=200, value=0.)
-        testX = pad_sequences(testX, maxlen=200, value=0.)
-        validationX = pad_sequences(validationX, maxlen=200, value=0.)
-
-        print(trainX[0:10])
-        print('len of trainX, validationX, and testX', len(trainX), ' ', len(validationX), ' ', len(testX))
-        
-        # Converting labels to binary vectors        
-        trainY = to_categorical(trainY, nb_classes=2)
-        validationY = to_categorical(validationY, nb_classes=2)
-        testY = to_categorical(testY, nb_classes=2)
-        print('len of trainY, validationY, and testY', len(trainY), ' ', len(validationY), ' ', len(testY))
-        return trainX, trainY, testX, testY, validationX, validationY        
-
-    def train(self, trainX, trainY, ibatch_size=512):
+    def train(self, trainX, trainY, model_path = Config.MODEL_PATH + 'SOCC_bilstm.tflearn', 
+              ibatch_size=512):
         # Training
-        gf = smart_open.smart_open(ROOT + 'data/glove/glove.pickle', 'rb')
+        gf = smart_open.smart_open(Config.GLOVE_EMBEDDINGS_PATH, 'rb')
         glove_embeddings = pickle.load(gf)
         shortened_embeddings = np.zeros((51887,200))
         index = 0
@@ -165,15 +197,21 @@ class Constructiveness_biLSTM():
         self.model.set_weights(embeddingWeights, shortened_embeddings)
 
         self.model.fit(trainX, trainY, validation_set=0.1, n_epoch=10, show_metric=True, batch_size=ibatch_size)
-        self.model.save(self.model_path)
-        print('Model saved at the following location: ', self.model_path)
+        self.model.save(model_path)
+        print('Model saved at the following location: ', model_path)
         return self.model
 
-    def train_bilstm(self):
-        trainX, trainY, testX, testY, validationX, validationY = self.prepare_data()    
+    
+    def train_bilstm(self, train_set):
+        trainX, trainY, validationX, validationY = get_preprocessed_and_padded_train_validation_splits(train_set)
+        #trainX, trainY, testX, testY, validationX, validationY = self.get_train_test_validation_data()
+        # self.prepare_train_validation_data()    
         #model_path = (model_path + '_' + str(hyperparameters['BATCH_SIZE']) + \
         #              '_' + str(hyperparameters['LEARNING_RATE']) + '.tflearn')
         self.model = self.train(trainX, trainY)
+        print('Validation Accuracy', self.model.evaluate(X=validationX, Y=validationY))
+        #print('Test Accuracy', self.model.evaluate(X=testX, Y=testY))
+
         
     def predict_bilstm(self, test_comment):
         #print('model loaded')
@@ -185,6 +223,7 @@ class Constructiveness_biLSTM():
         print(prediction, '=>', prediction_winner)
         return prediction_winner
 
+    
     def getHyperparameters(self, tune=False):
         if tune:
             hyperparams=({
@@ -202,14 +241,15 @@ class Constructiveness_biLSTM():
 
         return hyperparams        
     
+    
 if __name__=="__main__":
-    ROOT = '/home/ling-discourse-lab/Varada/'
-    bilstm_model_path = ROOT + 'output/intermediate_output/models/NYT_picks_train_SFU_test.tflearn'
-    input_data_path = ROOT + 'output/intermediate_output/pickle_files/NYT_YNC_plain_train_SFU_test.pkl'
-    
+    #bilstm_model_path = Config.MODEL_PATH + 'SOCC_annotated.tflearn'
+    input_data_path = Config.TRAIN_PATH + 'SOCC_NYT_picks_constructive_YNACC_non_constructive.csv'
+    bilstm = BiLSTMConstructivenessClassifier(input_data_path)
     # train mode
-    # bilstm = Constructiveness_biLSTM(bilstm_model_path, input_data_path, 'train')
-    
+
+    sys.exit(0)
+
     # test mode
     bilstm = Constructiveness_biLSTM(bilstm_model_path)    
     comment1 = "Harper promised 15% discount of 1000 dollars spent on children's sports activities. Mulcair promises 15 dollar a day child care. I will go with Mulcair."
