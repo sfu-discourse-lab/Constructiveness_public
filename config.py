@@ -11,7 +11,7 @@ class Config:
     SOCC_ANNOTATED_PATH = DATA_HOME + 'SOCC/'
     SOCC_ANNOTATED_CONSTRUCTIVENESS_1000 = SOCC_ANNOTATED_PATH + 'SFU_constructiveness_toxicity_corpus.csv'
     SOCC_ANNOTATED_CONSTRUCTIVENESS_12000 = SOCC_ANNOTATED_PATH + 'constructiveness_and_toxicity_annotations_batches_1_to_12.csv'
-    SOCC_ANNOTATED_WITH_PERSPECTIVE_SCORES = SOCC_ANNOTATED_PATH + 'annotated_SOCC_with_perspective_scores_corrected.csv'
+    SOCC_ANNOTATED_WITH_PERSPECTIVE_SCORES = SOCC_ANNOTATED_PATH + 'annotated_SOCC_with_perspective_scores_2.csv'
 
         
     # NYT PICKS paths
@@ -24,13 +24,18 @@ class Config:
     YNACC_EXPERT_ANNOTATIONS = YNACC_PATH + 'ydata-ynacc-v1_0_expert_annotations.tsv'
     YNACC_MTURK_ANNOTATIONS = YNACC_PATH + 'ydata-ynacc-v1_0_turk_annotations.tsv'
     
-    # Train data files
-    TRAIN_PATH = DATA_HOME + 'train/'        
+    # Training data files
+    TRAIN_PATH = DATA_HOME + 'train/'
+    ALL_FEATURES_FILE_PATH = TRAIN_PATH + 'SOCC_nyt_ync_all_features.csv'
+    
     
     # Model paths
     MODEL_PATH = DATA_HOME + 'models/'
     SVM_MODEL_PATH = MODEL_PATH + 'svm_model_new.pkl'
     BILSTM_MODEL_PATH = MODEL_PATH + 'SOCC_bilstm.tflearn'
+    
+    # Results paths
+    RESULTS_PATH = DATA_HOME + 'results/'
     
     # Test data files
     TEST_PATH = DATA_HOME + 'test/'
