@@ -49,7 +49,13 @@ def grid_search_experiments(feats_df,
                             n = 8):    
     svm_classifier = ConstructivenessClassifier(feats_df)
     svm_classifier.grid_search(feature_set)
-
+    
+def get_corr_df(df, model_cols, annotation_cols):
+    model_df = df[model_cols]
+    both_df = df[model_cols + annotation_cols]
+    corr_df = both_df.corr(method = 'pearson')[annotation_cols]
+    return corr_df    
+    
 
 if __name__ == '__main__':
     training_feats_file = Config.ALL_FEATURES_FILE_PATH
@@ -69,6 +75,6 @@ if __name__ == '__main__':
                   ]
 
     #grid_search_experiments(SOCC_df, feature_set)
-    print('The best feature combinations: ', find_best_feature_subset(SOCC_df, feature_set))           
+    #print('The best feature combinations: ', find_best_feature_subset(SOCC_df, feature_set))           
    
 
