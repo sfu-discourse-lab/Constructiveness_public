@@ -159,7 +159,7 @@ class ConstructivenessClassifier():
         print('Model trained and pickled in file: ', model_path)
 
         
-    def get_wrong_predictions_from_nfold_cross_validation(self, feature_set, n=5):
+    def get_wrong_predictions_from_nfold_cross_validation(self, feature_set, n=10):
         '''
         :param n:
         :return:
@@ -169,7 +169,7 @@ class ConstructivenessClassifier():
         return predicted, self.X1, self.y1 
         
         
-    def run_nfold_cross_validation(self, feature_set, n=5, scoring = 'f1'):
+    def run_nfold_cross_validation(self, feature_set, n=10, scoring = 'f1'):
         '''
         :param n:
         :return:
@@ -184,7 +184,7 @@ class ConstructivenessClassifier():
         return results 
     
 
-    def get_best_feature_subset(self, feature_set, n=8):                
+    def get_best_feature_subset(self, feature_set, n=10):                
         print('Cross validation folds: ', n)
         n_features = len(feature_set)
         subsets = (combinations(feature_set, k) for k in range(1,len(feature_set)))
@@ -194,7 +194,7 @@ class ConstructivenessClassifier():
         
         for subset in subsets:
             for ss in subset: 
-                results = self.run_nfold_cross_validation(feature_set = ss)
+                results = self.run_nfold_cross_validation(feature_set = ss, n = n)
                 #print('Subset: ', ss)
                 print('Results: ')
                 for (key, val) in results.items():
