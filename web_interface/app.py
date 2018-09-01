@@ -8,8 +8,7 @@ sys.path.append('../source/modeling/')
 sys.path.append('../')
 from config import Config
 
-
-import constuctiveness_predictor import ConstructivenessPredictor
+from constructiveness_predictor import ConstructivenessPredictor
 
 # Load models
 predictor = ConstructivenessPredictor()
@@ -44,7 +43,7 @@ def get_prediction():
     #label = "Constructive"
 
     print(text)
-    return jsonify(predicted_label="According to our " + selected_model.upper() + " model the comment is likely to be perceived as " + label.upper() + ".")
+    return jsonify(predicted_label="According to our " + selected_model.upper() + " model the comment is likely to be " + label.upper() + ".")
 
 @app.route("/select_model", methods=["GET", "POST"])
 def select_model():
