@@ -288,12 +288,7 @@ def get_arguments():
 if __name__ == "__main__":
     args = get_arguments()
     print(args)
-
-    df = pd.read_csv(args.train_features_csv)
-    ndf = df.drop(['toxic_other', 'noncon_other'], axis=1)    
-    ndf.to_csv(args.train_features_csv, index = False)
-    sys.exit(0)
-    cols = ['pp_comment_text', 'constructive', 'source',
+    cols = ['pp_comment_text', 'constructive', 'source', 'crowd_toxicity_level', 
             'specific_points', 'dialogue', 'no_con',
             'evidence', 'personal_story', 'solution', 'no_respect', 'no_non_con',
             'provocative', 'sarcastic', 'non_relevant',
@@ -301,19 +296,16 @@ if __name__ == "__main__":
             'embarrassment', 'inflammatory', 'has_conjunctions_and_connectives',
             'has_stance_adverbials', 'has_reasoning_verbs', 'has_modals', 'has_shell_nouns',
             'length', 'average_word_length', 'readability_score', 'personal_exp_score',
-            'named_entity_count', 'nSents', 'avg_words_per_sent', 
-            'FLIRTATION_probability', 'GENDER_probability',
-            'HEALTH_AGE_DISABILITY_probability', 'RELIGION_probability',
-            'RNE_probability', 'SEVERE_TOXICITY_probability',
-            'SEXUALLY_EXPLICIT_probability', 'SEXUAL_ORIENTATION_probability',
-            'TOXICITY_probability', 'TOXICITY_IDENTITY_HATE_probability',
-            'TOXICITY_INSULT_probability', 'TOXICITY_OBSCENE_probability',
-            'TOXICITY_THREAT_probability', 'ATTACK_ON_AUTHOR_probability',
-            'ATTACK_ON_COMMENTER_probability', 'ATTACK_ON_PUBLISHER_probability',
-            'INCOHERENT_probability', 'INFLAMMATORY_probability',
-            'LIKELY_TO_REJECT_probability', 'OBSCENE_probability',
-            'OFF_TOPIC_probability', 'SPAM_probability',
-            'UNSUBSTANTIAL_probability' 
+            'named_entity_count', 'nSents', 'avg_words_per_sent',             
+            'SEVERE_TOXICITY:probability', 'SEXUALLY_EXPLICIT:probability',
+            'TOXICITY:probability', 'TOXICITY_IDENTITY_HATE:probability',
+            'TOXICITY_INSULT:probability', 'TOXICITY_OBSCENE:probability',
+            'TOXICITY_THREAT:probability', 'ATTACK_ON_AUTHOR:probability',
+            'ATTACK_ON_COMMENTER:probability', 'ATTACK_ON_PUBLISHER:probability',
+            'INCOHERENT:probability', 'INFLAMMATORY:probability',
+            'LIKELY_TO_REJECT:probability', 'OBSCENE:probability',
+            'OFF_TOPIC:probability', 'SPAM:probability',
+            'UNSUBSTANTIAL:probability'
            ]
     
     #fe_train.write_features_csv(args.train_features_csv, cols)    
