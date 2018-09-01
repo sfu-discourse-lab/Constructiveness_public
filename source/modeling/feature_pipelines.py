@@ -255,36 +255,34 @@ def perspective_content_value_feats_pipeline():
     :return:
     '''
     INCOHERENT_probability = Pipeline([
-        ('selector', NumberSelector(key='INCOHERENT_probability')),
+        ('selector', NumberSelector(key='INCOHERENT:probability')),
         ('standard', StandardScaler())
     ])
 
-    OFF_TOPIC_probability = Pipeline([
-        ('selector', NumberSelector(key='OFF_TOPIC_probability')),
-        ('standard', StandardScaler())
-    ])
+    #OFF_TOPIC_probability = Pipeline([
+    #    ('selector', NumberSelector(key='OFF_TOPIC_probability')),
+    #    ('standard', StandardScaler())
+    #])
 
     SPAM_probability = Pipeline([
-        ('selector', NumberSelector(key='SPAM_probability')),
+        ('selector', NumberSelector(key='SPAM:probability')),
         ('standard', StandardScaler())
     ])
 
     UNSUBSTANTIAL_probability = Pipeline([
-        ('selector', NumberSelector(key='UNSUBSTANTIAL_probability')),
+        ('selector', NumberSelector(key='UNSUBSTANTIAL:probability')),
         ('standard', StandardScaler())
     ])
     
-    LIKELY_TO_REJECT_probability = Pipeline([
-        ('selector', NumberSelector(key='LIKELY_TO_REJECT_probability')),
-        ('standard', StandardScaler())
-    ])
+    #LIKELY_TO_REJECT_probability = Pipeline([
+    #    ('selector', NumberSelector(key='LIKELY_TO_REJECT:probability')),
+    #    ('standard', StandardScaler())
+    #])
     
     perspective_content_value_feats = FeatureUnion([
         ('INCOHERENT_probability', INCOHERENT_probability),
-        ('OFF_TOPIC_probability', OFF_TOPIC_probability),
         ('SPAM_probability', SPAM_probability),
-        ('UNSUBSTANTIAL_probability', UNSUBSTANTIAL_probability),
-        ('LIKELY_TO_REJECT_probability', LIKELY_TO_REJECT_probability)        
+        ('UNSUBSTANTIAL_probability', UNSUBSTANTIAL_probability)
     ])
     return perspective_content_value_feats
 
@@ -293,17 +291,17 @@ def perspective_aggressiveness_feats_pipeline():
     '''
     '''
     ATTACK_ON_AUTHOR_probability = Pipeline([
-        ('selector', NumberSelector(key='ATTACK_ON_AUTHOR_probability')),
+        ('selector', NumberSelector(key='ATTACK_ON_AUTHOR:probability')),
         ('standard', StandardScaler())
     ])
 
     ATTACK_ON_COMMENTER_probability = Pipeline([
-        ('selector', NumberSelector(key='ATTACK_ON_COMMENTER_probability')),
+        ('selector', NumberSelector(key='ATTACK_ON_COMMENTER:probability')),
         ('standard', StandardScaler())
     ])
 
     ATTACK_ON_PUBLISHER_probability = Pipeline([
-        ('selector', NumberSelector(key='ATTACK_ON_PUBLISHER_probability')),
+        ('selector', NumberSelector(key='ATTACK_ON_PUBLISHER:probability')),
         ('standard', StandardScaler())
     ])
     
@@ -314,84 +312,51 @@ def perspective_aggressiveness_feats_pipeline():
     ])
     return perspective_aggressiveness_feats
 
-
-def perspective_individual_chars_feats_pipeline():
-    '''
-    '''
-    GENDER_probability = Pipeline([
-        ('selector', NumberSelector(key='GENDER_probability')),
-        ('standard', StandardScaler())
-    ])
-
-    HEALTH_AGE_DISABILITY_probability = Pipeline([
-        ('selector', NumberSelector(key='HEALTH_AGE_DISABILITY_probability')),
-        ('standard', StandardScaler())
-    ])
-
-    RELIGION_probability = Pipeline([
-        ('selector', NumberSelector(key='RELIGION_probability')),
-        ('standard', StandardScaler())
-    ])
-
-    SEXUAL_ORIENTATION_probability = Pipeline([
-        ('selector', NumberSelector(key='SEXUAL_ORIENTATION_probability')),
-        ('standard', StandardScaler())
-    ])
-    
-    
-    perspective_individual_chars_feats = FeatureUnion([
-        ('GENDER_probability', GENDER_probability),
-        ('HEALTH_AGE_DISABILITY_probability', HEALTH_AGE_DISABILITY_probability),    
-        ('RELIGION_probability', RELIGION_probability),
-        ('SEXUAL_ORIENTATION_probability', SEXUAL_ORIENTATION_probability),
-    ])
-    return perspective_individual_chars_feats
-
 def perspecitive_toxicity_feats_pipeline():
     '''
     '''
     SEVERE_TOXICITY_probability = Pipeline([
-        ('selector', NumberSelector(key='SEVERE_TOXICITY_probability')),
+        ('selector', NumberSelector(key='SEVERE_TOXICITY:probability')),
         ('standard', StandardScaler())
     ])
 
     SEXUALLY_EXPLICIT_probability = Pipeline([
-        ('selector', NumberSelector(key='SEXUALLY_EXPLICIT_probability')),
+        ('selector', NumberSelector(key='SEXUALLY_EXPLICIT:probability')),
         ('standard', StandardScaler())
     ])
 
     TOXICITY_probability = Pipeline([
-        ('selector', NumberSelector(key='TOXICITY_probability')),
+        ('selector', NumberSelector(key='TOXICITY:probability')),
         ('standard', StandardScaler())
     ])
 
     TOXICITY_IDENTITY_HATE_probability = Pipeline([
-        ('selector', NumberSelector(key='TOXICITY_IDENTITY_HATE_probability')),
+        ('selector', NumberSelector(key='TOXICITY_IDENTITY_HATE:probability')),
         ('standard', StandardScaler())
     ])
 
     TOXICITY_INSULT_probability = Pipeline([
-        ('selector', NumberSelector(key='TOXICITY_INSULT_probability')),
+        ('selector', NumberSelector(key='TOXICITY_INSULT:probability')),
         ('standard', StandardScaler())
     ])
 
     TOXICITY_OBSCENE_probability = Pipeline([
-        ('selector', NumberSelector(key='TOXICITY_OBSCENE_probability')),
+        ('selector', NumberSelector(key='TOXICITY_OBSCENE:probability')),
         ('standard', StandardScaler())
     ])
 
     TOXICITY_THREAT_probability = Pipeline([
-        ('selector', NumberSelector(key='TOXICITY_THREAT_probability')),
+        ('selector', NumberSelector(key='TOXICITY_THREAT:probability')),
         ('standard', StandardScaler())
     ])
 
     INFLAMMATORY_probability = Pipeline([
-        ('selector', NumberSelector(key='INFLAMMATORY_probability')),
+        ('selector', NumberSelector(key='INFLAMMATORY:probability')),
         ('standard', StandardScaler())
     ])
 
     OBSCENE_probability = Pipeline([
-        ('selector', NumberSelector(key='OBSCENE_probability')),
+        ('selector', NumberSelector(key='OBSCENE:probability')),
         ('standard', StandardScaler())
     ])
     
@@ -418,7 +383,6 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
                                                      'toxicity_chars_feats', 
                                                      'perspective_content_value_feats', 
                                                      'perspective_aggressiveness_feats',
-                                                     'perspective_individual_chars_feats',
                                                      'perspecitive_toxicity_feats']):
     '''
     :return: re
@@ -433,7 +397,6 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
     toxicity_chars_feats = toxicity_chars_feats_pipeline()
     perspective_content_value_feats = perspective_content_value_feats_pipeline()
     perspective_aggressiveness_feats = perspective_aggressiveness_feats_pipeline()
-    perspective_individual_chars_feats = perspective_individual_chars_feats_pipeline()
     perspecitive_toxicity_feats = perspecitive_toxicity_feats_pipeline()
     
     feat_sets_dict = {'text_feats': text_feats,
@@ -446,7 +409,6 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
                       'toxicity_chars_feats': toxicity_chars_feats,
                       'perspective_content_value_feats': perspective_content_value_feats,
                       'perspective_aggressiveness_feats': perspective_aggressiveness_feats, 
-                      'perspective_individual_chars_feats': perspective_individual_chars_feats,
                       'perspecitive_toxicity_feats': perspecitive_toxicity_feats
                      }
     
@@ -458,5 +420,3 @@ def build_feature_pipelines_and_unions(feature_set = ['text_feats', 'length_feat
 if __name__ == "__main__":
     feats = build_feature_pipelines_and_unions()
     print(feats)
-
-    
