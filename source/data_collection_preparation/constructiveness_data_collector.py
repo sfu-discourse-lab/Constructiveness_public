@@ -74,7 +74,8 @@ class ConstructivenessDataCollector:
         # Select comments selected by NYT moderators as NYT pick and where the length
         # of the comment is  > COMMENT_WORDS_THRESHOLD
         df['constructive'] = df['constructive'].apply(lambda x: 1 if x > CONSTRUCTIVENESS_SCORE_THRESHOLD else 0)
-        self.training_df = pd.concat([self.training_df, df[['comment_text', 'constructive', 'source',
+        self.training_df = pd.concat([self.training_df, df[['comment_text', 'constructive', 'source', 
+                                                            'crowd_toxicity_level',
                                                             'constructive_characteristics',
                                                             'non_constructive_characteristics',
                                                             'toxicity_characteristics']]])
@@ -101,6 +102,7 @@ class ConstructivenessDataCollector:
                            cols_dict['comment_word_count']:'comment_word_count',
                            cols_dict['constructive']: 'constructive'}, inplace = True)
         df['source'] = source
+        df['crowd_toxicity_level'] = np.NaN
         df['constructive_characteristics'] = np.NaN
         df['non_constructive_characteristics'] = np.NaN
         df['toxicity_characteristics'] = np.NaN
@@ -109,6 +111,7 @@ class ConstructivenessDataCollector:
         positive_df = df[
             (df['constructive'] == 1) & (df['comment_word_count'] > COMMENT_WORDS_THRESHOLD)]
         self.training_df = pd.concat([self.training_df, positive_df[['comment_text', 'constructive', 'source',
+                                                                     'crowd_toxicity_level', 
                                                                      'constructive_characteristics',
                                                                      'non_constructive_characteristics',
                                                                      'toxicity_characteristics'
@@ -135,6 +138,7 @@ class ConstructivenessDataCollector:
         df.rename(columns={cols_dict['comment_text']: 'comment_text'}, inplace=True)
         df['comment_word_count'] = df['comment_text'].apply(lambda x: len(x.split()))
         df['source'] = source
+        df['crowd_toxicity_level'] = np.NaN        
         df['constructive_characteristics'] = np.NaN
         df['non_constructive_characteristics'] = np.NaN
         df['toxicity_characteristics'] = np.NaN
@@ -145,6 +149,7 @@ class ConstructivenessDataCollector:
 
         negative_df['constructive'] = negative_df[cols_dict['constructive']].apply(lambda x: 0 if x.startswith('Not') else 1)
         self.training_df = pd.concat([self.training_df, negative_df[['comment_text', 'constructive', 'source',
+                                                                     'crowd_toxicity_level', 
                                                                      'constructive_characteristics',
                                                                      'non_constructive_characteristics',
                                                                      'toxicity_characteristics'
@@ -220,6 +225,7 @@ class ConstructivenessDataCollector:
 
     def write_csv(self, output_csv, mode ='train', cols = ['comment_text', 'pp_comment_text',
                                                            'constructive', 'source',
+                                                           'crowd_toxicity_level', 
                                                            'constructive_characteristics',
                                                            'non_constructive_characteristics',
                                                            'toxicity_characteristics'], index = False):

@@ -27,14 +27,13 @@ import numpy as np
 import pandas as pd
 import argparse, glob, codecs
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, cross_val_predict
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from sklearn.model_selection import GridSearchCV
 from feature_pipelines import build_feature_pipelines_and_unions
 
 from itertools import chain, combinations
-from sklearn.cross_validation import cross_val_score
 
 class ConstructivenessClassifier():
     '''
@@ -68,29 +67,29 @@ class ConstructivenessClassifier():
         self.y1 = self.df_train[target_col]
 
         self.X_train, self.X_valid, self.y_train, self.y_valid = train_test_split(
-            self.X1, self.y1, test_size=0.2, random_state=0)
+            self.X1, self.y1, test_size=0.9, random_state=0)
 
         #self.X_test = self.df_test[self.df_test.columns.drop(target_col)]
         #self.y_test = self.df_test[target_col]
         # Best parameters found
         # {'C': 1000, 'gamma': 0.001, 'kernel': 'rbf'}
-        self.tuned_parameters = [#{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
-                             #'C': [1, 10, 100, 1000]},
-                            {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
+        self.tuned_parameters = [{'kernel': ['rbf'], 'gamma': [1e-3, 1e-4],
+                                 'C': [1, 10, 100, 1000]},
+                                {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}]
         self.scores = ['precision', 'recall']
         self.CV_P_R = []
 
-    def grid_search(self):
+    def grid_search(self, feature_set):
         '''
         :return:
         '''
-        feats = build_feature_pipelines_and_unions()
+        feats = build_feature_pipelines_and_unions(feature_set)
         for score in self.scores:
             print("# Tuning hyper-parameters for %s" % score)
             print()
 
             clf = GridSearchCV(SVC(),
-                               self.tuned_parameters, cv=3,
+                               self.tuned_parameters, cv=5,
                                scoring='%s_macro' % score)
             #clf.fit(self.X_train, self.y_train)
 
@@ -99,7 +98,7 @@ class ConstructivenessClassifier():
                 ('classifier', clf),
             ])
 
-            pipeline.fit(self.X_train, self.y_train)
+            pipeline.fit(self.X1, self.y1)
 
             print("Best parameters set found on development set:")
             print()
@@ -130,25 +129,22 @@ class ConstructivenessClassifier():
                                                              max_iter=50, 
                                                              tol=1e-4, 
                                                              random_state=42)):
-                                  
-                                  #=SVC(C=1000, gamma=0.001, kernel='rbf')):
+                                  #SVC(C=100, gamma=0.001, kernel='rbf')):
         '''
         :param feature_set:
         :param classifier:
         :return:
         '''
+        print('Classifier: ', classifier)
+        print('Feature set: ', feature_set)
         feats = build_feature_pipelines_and_unions(feature_set)
         pipeline = Pipeline([
             ('features',feats),
-            #('feature_selection', SelectFromModel(SVC(kernel = 'linear'))),
-            #('feature_selection', RFE(estimator=SVC(kernel='linear'), n_features_to_select=1, step=1)),
-            #('feature_selection', RFECV(estimator=SVC(kernel='linear'), step=1, cv=StratifiedKFold(2),
-            #  scoring='accuracy')),
-            #('classifier', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=42)),
             ('classifier', classifier),
         ])
         return pipeline
 
+    
     def train_classifier(self,
                          model_path,
                          #classifier,
@@ -161,20 +157,26 @@ class ConstructivenessClassifier():
         joblib.dump(self.pipeline, model_path)
         s = pickle.dumps(self.pipeline)
         print('Model trained and pickled in file: ', model_path)
-        #svm_predictor = pickle.loads(s)
-        #preds = svm_predictor.predict(self.X_test)
-        #print('Mean accuracy: ', np.mean(preds == self.y_test))
-        #print('SVM correct prediction: {:4.2f}'.format(np.mean(preds == self.y_test)))
-        #print(metrics.classification_report(self.y_test, preds, target_names=['non-constructive', 'constructive']))#
 
         
-    def run_nfold_cross_validation(self, feature_set, n=5):
+    def get_wrong_predictions_from_nfold_cross_validation(self, feature_set, n=10):
         '''
         :param n:
         :return:
         '''
         pipeline = self.build_classifier_pipeline(feature_set)
-        scores = cross_val_score(pipeline, self.X_train, self.y_train, cv=n, scoring='f1_micro')
+        predicted = cross_val_predict(pipeline, self.X1, self.y1, cv=n)
+        return predicted, self.X1, self.y1 
+        
+        
+    def run_nfold_cross_validation(self, feature_set, n=10, scoring = 'f1'):
+        '''
+        :param n:
+        :return:
+        '''
+        print('Cross validation folds: ', n)
+        pipeline = self.build_classifier_pipeline(feature_set)
+        scores = cross_val_score(pipeline, self.X1, self.y1, cv=n, scoring=scoring)        
         results = {}
         results['scores'] = scores
         results['mean_score'] = np.mean(scores)
@@ -182,7 +184,8 @@ class ConstructivenessClassifier():
         return results 
     
 
-    def get_best_feature_subset(self, feature_set, n=3):                
+    def get_best_feature_subset(self, feature_set, n=10):                
+        print('Cross validation folds: ', n)
         n_features = len(feature_set)
         subsets = (combinations(feature_set, k) for k in range(1,len(feature_set)))
         
@@ -191,7 +194,12 @@ class ConstructivenessClassifier():
         
         for subset in subsets:
             for ss in subset: 
-                results = self.run_nfold_cross_validation(feature_set = ss)
+                results = self.run_nfold_cross_validation(feature_set = ss, n = n)
+                #print('Subset: ', ss)
+                print('Results: ')
+                for (key, val) in results.items():
+                    print(key, ' : ', val)
+                print('---------\n')
                 if results['mean_score'] > best_score:
                     best_score, best_subset = results['mean_score'], ss
 
@@ -270,15 +278,37 @@ class ConstructivenessClassifier():
 
     def create_learning_curves(self, feature_set):
         estimator = self.build_classifier_pipeline(feature_set = feature_set)
-
         title = "Learning Curves with classifier: "
 
         # Cross validation with 100 iterations to get smoother mean test and train
         # score curves, each time with 20% data randomly selected as a validation set.
         cv = ShuffleSplit(n_splits=100, test_size=0.2, random_state=0)
-        print('plot learning cures:  ')
+        print('plot learning curves:  ')
         self.plot_learning_curve(estimator, title, self.X1, self.y1, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
         print('Show the plots')
         plt.show()        
         
 
+if __name__=="__main__":
+    import sys
+    sys.path.append('../../')
+    from config import Config
+    training_feats_file = Config.FEATURES_FILE_PATH #'SOCC_nyt_ync_features.csv'
+    training_feats_df = pd.read_csv(training_feats_file)
+    SOCC_df = training_feats_df[training_feats_df['source'].isin(['SOCC'])]
+    feature_set = ['text_feats', 
+                   'length_feats',
+                   'argumentation_feats',
+                   'COMMENTIQ_feats',
+                   'named_entity_feats',
+                   'constructiveness_chars_feats',
+                   'non_constructiveness_chars_feats',
+                   'toxicity_chars_feats',
+                   'perspective_content_value_feats',
+                   'perspective_aggressiveness_feats'
+                   'perspecitive_toxicity_feats'    
+               ]
+    
+    svm_classifier = ConstructivenessClassifier(SOCC_df)
+    svm_classifier.train_classifier(model_path = Config.MODEL_PATH + 'svm_model_new.pkl', feature_set = feature_set)
+    

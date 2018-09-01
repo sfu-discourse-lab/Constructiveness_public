@@ -8,17 +8,10 @@ sys.path.append('../source/modeling/')
 sys.path.append('../')
 from config import Config
 
-import svm_constructiveness_predictor
-from svm_constructiveness_predictor import ConstructivenessPredictor
-#import bilstm_constructiveness_predictor
-#from bilstm_constructiveness_predictor import Constructiveness_biLSTM
-
-svm_model_path = Config.MODEL_PATH + 'svm_model.pkl'
-#bilstm_model_path = Config.MODEL_PATH + 'NYT_picks_train_SFU_test.tflearn'
+from constructiveness_predictor import ConstructivenessPredictor
 
 # Load models
-#bilstm = Constructiveness_biLSTM(bilstm_model_path)
-csvm = ConstructivenessPredictor(svm_model_path)
+predictor = ConstructivenessPredictor()
 
 from flask import Flask
 from flask import render_template, request, jsonify
@@ -38,10 +31,10 @@ def get_prediction():
     if selected_model == "svm":
         print("You selected SVM.")
         #prediction = svm_prediction.predict(text, model_path)[0]
-        label = csvm.predict_svm(text)
+        label = predictor.predict_svm(text)
     elif selected_model == "lstm":
         print("You selected bidirectional LSTM.")
-        label = bilstm.predict_bilstm(text)
+        label = predictor.predict_bilstm(text)
         # do whatever needs to be done for lstm
     else:
         print("Did you forget to select the model? Please select the model first.")
@@ -50,7 +43,7 @@ def get_prediction():
     #label = "Constructive"
 
     print(text)
-    return jsonify(predicted_label="According to our " + selected_model.upper() + " model the comment is likely to be perceived as " + label.upper() + ".")
+    return jsonify(predicted_label="According to our " + selected_model.upper() + " model the comment is likely to be " + label.upper() + ".")
 
 @app.route("/select_model", methods=["GET", "POST"])
 def select_model():
