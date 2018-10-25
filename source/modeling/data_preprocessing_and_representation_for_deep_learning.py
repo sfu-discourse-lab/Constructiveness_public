@@ -51,12 +51,17 @@ def create_numeric_representation_of_text_and_labels(data_path = Config.SOCC_ANN
                                                     target_col = 'constructive'):
     '''
     '''
-    df = pd.read_csv(data_path)
-    df[text_col + '_dict_ids'] = df[text_col].apply(text_2_dict_ids_list)                
+    if type(data_path) == str:
+        df = pd.read_csv(data_path)
+    else: 
+        df = data_path
+        
+    col_name = text_col + '_dict_ids'
+    df[col_name] = df[text_col].apply(text_2_dict_ids_list)                
     df_pos_subset = df[df[target_col] == 1]
     df_neg_subset = df[df[target_col] == 0]
-    x_pos = df_pos_subset[text_col + '_dict_ids'].tolist()        
-    x_neg = df_neg_subset[text_col + '_dict_ids'].tolist()
+    x_pos = df_pos_subset[col_name].tolist()        
+    x_neg = df_neg_subset[col_name].tolist()
     y_pos = [1] * len(x_pos)
     y_neg = [0] * len(x_neg)        
     x = x_pos + x_neg
@@ -160,13 +165,13 @@ def binarize_labels(Y, nb_classes=2):
     return Y        
 
 
-def get_preprocessed_and_padded_train_validation_splits(train_set):
-    train, validation = split_and_sort_data(train_set=train_set, n_words=50000, valid_portion=0.1)
+def get_preprocessed_and_padded_train_validation_splits(train_set, validation_portion = 0.1):
+    train, validation = split_and_sort_data(train_set=train_set, n_words=50000, valid_portion=validation_portion)
     trainX, trainY = train
     validationX, validationY = validation
     #testX, testY = test
 
-    print('trainX[-1] after load data: ', trainX[1000])
+    #print('trainX[-1] after load data: ', trainX[1000])
 
 
     print('Train_len: ', len(trainX), len(trainY))
