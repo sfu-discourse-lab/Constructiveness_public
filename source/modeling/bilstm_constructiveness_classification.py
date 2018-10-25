@@ -43,10 +43,7 @@ from data_preprocessing_and_representation_for_deep_learning import *
 import pickle as pkl
 
 class BiLSTMConstructivenessClassifier():
-    def __init__(self, train_data_path = Config.SOCC_ANNOTATED_CONSTRUCTIVENESS_12000, 
-                       test_data_path = Config.SOCC_ANNOTATED_CONSTRUCTIVENESS_1000, 
-                       mode = 'train',
-                       model_path = Config.BILSTM_MODEL_PATH):        
+    def __init__(self):      
 
         self.model = None
         self.net = None
@@ -63,16 +60,32 @@ class BiLSTMConstructivenessClassifier():
             self.words.append(line)
             index+=1
            '''
-        if mode == 'train': 
-            train_set = create_numeric_representation_of_text_and_labels()
-            self.train_bilstm(train_set)
-        else:
-            self.model.load(model_path)                       
+        
+    def train_test_length_balanced(self, 
+                                   model_path = Config.BILSTM_MODEL_PATH, 
+                                   train_data_path = Config.TRAIN_PATH + 'CTC-CTC_len_balanced_test.csv', 
+                                   test_data_path = Config.TRAIN_PATH + 'CTC_len_balanced_test.csv'):
+        """
+        """
+
             
-        #print('Test Accuracy', self.model.evaluate(X=x_test, Y=y_test))
-        #accuracy = self.predict(self.model, x_test, y_test)
-        #print('Accuracy: ', accuracy)
-       
+        # Prepare training data
+        train_df = pd.read_csv(train_data_path)            
+        train_set = create_numeric_representation_of_text_and_labels(train_df, text_col = 'pp_comment_text')            
+        trainX, trainY, validationX, validationY = get_preprocessed_and_padded_train_validation_splits(train_set)                         
+        # Train model
+        self.model = self.train(trainX, trainY, model_path)
+
+        # Prepare length-balanced test data
+        test_df = pd.read_csv(test_data_path)
+        test_set = create_numeric_representation_of_text_and_labels(test_df, text_col = 'pp_comment_text')
+        testX, testY, validX, validY = get_preprocessed_and_padded_train_validation_splits(test_set, validation_portion = 0.0)   
+        
+        # Test on the length-balanced data
+        predictions = self.model.predict(testX)
+        self.my_evaluate(predictions, testY)   
+                        
+            
     def my_evaluate(self, predictions, gold):
         '''
         :param predictions:
@@ -105,16 +118,17 @@ class BiLSTMConstructivenessClassifier():
         return accuracy
 
     
-    def predict(self, model, testX, testY):
-        print(model.evaluate(testX, testY))
+    def predict(self, testX, testY):
+        #print(self.model.evaluate(testX, testY))
 
-        predictions = model.predict(testX)
-        count = 0
-        for prediction in predictions:
-            print(prediction, '=>', testY[count])
-            count += 1
-        accuracy = my_evaluate(predictions, testY)
-        return accuracy
+        predictions = self.model.predict(testX)
+        return predictions
+        #count = 0
+        #for prediction in predictions:
+        #    print(prediction, '=>', testY[count])
+        #    count += 1
+        #accuracy = my_evaluate(predictions, testY)
+        #return accuracy
         
 
     def build_network(self, ilearning_rate=0.001):
@@ -179,8 +193,8 @@ class BiLSTMConstructivenessClassifier():
         return testX 
     
 
-    def train(self, trainX, trainY, model_path = Config.MODEL_PATH + 'SOCC_bilstm.tflearn', 
-              ibatch_size=512):
+    def train(self, trainX, trainY, model_path, 
+              ibatch_size=128):
         # Training
         gf = smart_open.smart_open(Config.GLOVE_EMBEDDINGS_PATH, 'rb')
         glove_embeddings = pickle.load(gf)
@@ -202,13 +216,13 @@ class BiLSTMConstructivenessClassifier():
         return self.model
 
     
-    def train_bilstm(self, train_set):
+    def train_bilstm(self, train_set, model_path = Config.MODEL_PATH + 'SOCC_bilstm.tflearn'):
         trainX, trainY, validationX, validationY = get_preprocessed_and_padded_train_validation_splits(train_set)
         #trainX, trainY, testX, testY, validationX, validationY = self.get_train_test_validation_data()
         # self.prepare_train_validation_data()    
         #model_path = (model_path + '_' + str(hyperparameters['BATCH_SIZE']) + \
         #              '_' + str(hyperparameters['LEARNING_RATE']) + '.tflearn')
-        self.model = self.train(trainX, trainY)
+        self.model = self.train(trainX, trainY, model_path)
         print('Validation Accuracy', self.model.evaluate(X=validationX, Y=validationY))
         #print('Test Accuracy', self.model.evaluate(X=testX, Y=testY))
 
@@ -243,11 +257,8 @@ class BiLSTMConstructivenessClassifier():
     
     
 if __name__=="__main__":
-    #bilstm_model_path = Config.MODEL_PATH + 'SOCC_annotated.tflearn'
-    input_data_path = Config.TRAIN_PATH + 'SOCC_NYT_picks_constructive_YNACC_non_constructive.csv'
-    bilstm = BiLSTMConstructivenessClassifier(input_data_path)
-    # train mode
-
+    bilstm = BiLSTMConstructivenessClassifier()
+    bilstm.train_test_length_balanced()
     sys.exit(0)
 
     # test mode
