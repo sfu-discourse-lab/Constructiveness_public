@@ -8,11 +8,17 @@ class Config:
     RESOURCES_HOME = PROJECT_HOME + 'resources/'
     
     # SOCC related paths 
-    SOCC_ANNOTATED_PATH = DATA_HOME + 'SOCC/'
+    SOCC = HOME + '/data/SOCC/'
+    SOCC_RAW = HOME + 'data/SOCC/raw/'
+    SOCC_COMMENTS_PATH = SOCC_RAW + 'gnm_comments.csv'
+    SOCC_ARTICLES_PATH = SOCC_RAW + 'gnm_articles.csv'
+    SOCC_COMMENT_THREADS_PATH = SOCC_RAW + 'gnm_comment_threads.csv'
+    
+    SOCC_ANNOTATED_PATH = DATA_HOME + 'SOCC/'    
     SOCC_ANNOTATED_CONSTRUCTIVENESS_1000 = SOCC_ANNOTATED_PATH + 'SFU_constructiveness_toxicity_corpus.csv'
     SOCC_ANNOTATED_CONSTRUCTIVENESS_12000 = SOCC_ANNOTATED_PATH + 'constructiveness_and_toxicity_annotations_batches_1_to_12.csv'
-    SOCC_ANNOTATED_WITH_PERSPECTIVE_SCORES = SOCC_ANNOTATED_PATH + 'annotated_SOCC_with_perspective_scores_2.csv'
-
+    SOCC_ANNOTATED_WITH_PERSPECTIVE_SCORES = SOCC_ANNOTATED_PATH + 'annotated_SOCC_with_perspective_scores_revised.csv'
+    SOCC_COMMENTS_WITH_PERSPECTIVE_SCORES = SOCC_ANNOTATED_PATH + 'gnm_comments_scored_2.csv'
         
     # NYT PICKS paths
     NYT_PICKS_PATH = DATA_HOME + 'NYT_comments_csvs/'
@@ -26,7 +32,12 @@ class Config:
     
     # Training data files
     TRAIN_PATH = DATA_HOME + 'train/'
-    ALL_FEATURES_FILE_PATH = TRAIN_PATH + 'SOCC_nyt_ync_all_features.csv'     
+    #ALL_FEATURES_FILE_PATH = TRAIN_PATH + 'old_SOCC_SOCC_nyt_ync_all_features.csv'   
+    ALL_DATASETS_ALL_FEATURES_FILE_PATH = TRAIN_PATH + 'all_datasets_all_feats.csv'
+    ALL_FEATURES_FILE_PATH = TRAIN_PATH + 'socc_both_nyt_ynacc_feats.csv'
+    ALL_SOCC_FEATURES_FILE_PATH = TRAIN_PATH + 'SOCC_all_feats.csv'
+    CTC_FEATURES_FILE_PATH = TRAIN_PATH + 'CTC_with_all_feats.csv'
+    #'all_SOCC_constructiveness_feats.csv'
     
     # Model paths
     MODEL_PATH = DATA_HOME + 'models/'
@@ -34,7 +45,10 @@ class Config:
     BILSTM_MODEL_PATH = MODEL_PATH + 'SOCC_bilstm.tflearn'
 
     # Feature sets
-    ALL_FEATURES = [# constructiveness_chars_feats
+    ALL_FEATURES = ['ngram_feats',
+                    'tfidf_feats',
+                    'pos_feats',
+                    # constructiveness_chars_feats
                     'specific_points',
                     'dialogue',
                     'no_con',
@@ -81,7 +95,6 @@ class Config:
                     'TOXICITY_THREAT:probability', 
                     'INFLAMMATORY:probability',
                     'LIKELY_TO_REJECT:probability',
-                    'OBSCENE:probability',
                     # perspective_aggressiveness_feats                                                
                     'ATTACK_ON_AUTHOR:probability',
                     'ATTACK_ON_COMMENTER:probability', 
@@ -92,20 +105,24 @@ class Config:
                     'SPAM:probability',
                     'UNSUBSTANTIAL:probability']    
     
-    FEATURE_SETS = ['text_feats', 
-                        'length_feats',
-                        'argumentation_feats',
-                        'COMMENTIQ_feats',
-                        'named_entity_feats',
-                        'constructiveness_chars_feats',
-                        'non_constructiveness_chars_feats',
-                        'toxicity_chars_feats',
-                        'perspective_content_value_feats',
-                        'perspective_aggressiveness_feats',
-                        'perspecitive_toxicity_feats']
+    FEATURE_SETS = ['ngram_feats', 
+                    'tfidf_feats',
+                    'pos_feats',
+                    'length_feats',
+                    'argumentation_feats',
+                    'text_quality_feats',
+                    'named_entity_feats',
+                    #'constructiveness_chars_feats',
+                    #'non_constructiveness_chars_feats',
+                    #'toxicity_chars_feats',
+                    'perspective_content_value_feats',
+                    'perspective_aggressiveness_feats',
+                    'perspecitive_toxicity_feats'
+                   ]
     
     # Results paths
     RESULTS_PATH = DATA_HOME + 'results/'
+    FIGURES_PATH = RESULTS_PATH + 'figures/'
     
     # Test data files
     TEST_PATH = DATA_HOME + 'test/'
